@@ -10,9 +10,9 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type = 'text', label, error, id, ...props }, ref) => {
     return (
-      <div className="w-full space-y-1.5 text-left">
+      <div className="w-full space-y-2 text-left">
         {label ? (
-          <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <label htmlFor={id} className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
             {label}
           </label>
         ) : null}
@@ -22,8 +22,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           className={twMerge(
             clsx(
-              'w-full px-4 py-2.5 bg-zinc-900/60 border rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all duration-200',
-              error ? 'border-red-500/80 focus:ring-red-500/30' : 'border-zinc-800 focus:border-violet-500/50',
+              'w-full px-4 py-3 bg-zinc-950/80 border border-white/5 rounded-lg text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-accent/40 focus:ring-4 focus:ring-brand-accent/10 transition-all duration-300',
+              error ? 'border-red-500/40 focus:ring-red-500/10' : '',
               className
             )
           )}

@@ -142,31 +142,31 @@ export const PlayGame: React.FC = () => {
 
     if (rows.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-48 text-zinc-500 text-sm border border-zinc-800/40 border-dashed rounded-lg bg-zinc-950/20 p-4">
-          <p>No moves played yet.</p>
-          <p className="text-xs text-zinc-600 mt-1">Drag a piece to start the game.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-zinc-550 text-xs border border-dashed border-white/5 rounded-xl bg-zinc-950/20 px-4">
+          <p>No moves played.</p>
+          <p className="text-[10px] text-zinc-650 mt-1">Move a piece to begin.</p>
         </div>
       );
     }
 
     return (
-      <div className="overflow-y-auto max-h-72 border border-zinc-800/60 rounded-lg bg-zinc-950/40 divide-y divide-zinc-900/60">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-zinc-400 bg-zinc-900/40 uppercase font-semibold">
+      <div className="overflow-y-auto max-h-[380px] border border-white/5 rounded-xl bg-zinc-950/40 divide-y divide-white/5">
+        <table className="w-full text-xs text-left">
+          <thead className="text-[10px] text-zinc-500 bg-zinc-900/10 uppercase font-bold tracking-wider">
             <tr>
-              <th className="px-4 py-2 w-16 text-center">#</th>
-              <th className="px-4 py-2">White</th>
-              <th className="px-4 py-2">Black</th>
+              <th className="px-3 py-2.5 w-10 text-center border-r border-white/5">#</th>
+              <th className="px-3 py-2.5">White</th>
+              <th className="px-3 py-2.5">Black</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-900/40 font-mono text-zinc-300">
+          <tbody className="divide-y divide-white/5 font-mono text-zinc-300">
             {rows.map((row) => (
-              <tr key={row.num} className="hover:bg-zinc-800/20 transition-colors">
-                <td className="px-4 py-2 text-center text-zinc-500 font-sans font-semibold border-r border-zinc-900/40 bg-zinc-900/10">
+              <tr key={row.num} className="hover:bg-white/[0.01] transition-colors">
+                <td className="px-3 py-2 text-center text-zinc-500 font-sans font-semibold border-r border-white/5">
                   {row.num}
                 </td>
-                <td className="px-4 py-2 font-medium">{row.white}</td>
-                <td className="px-4 py-2 font-medium">{row.black}</td>
+                <td className="px-3 py-2 font-medium">{row.white}</td>
+                <td className="px-3 py-2 font-medium">{row.black}</td>
               </tr>
             ))}
           </tbody>
@@ -177,168 +177,168 @@ export const PlayGame: React.FC = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-12 animate-fade-in">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-left">
           <div className="space-y-1">
-            <h1 className="text-2xl md:text-3xl font-extrabold font-display text-zinc-100 tracking-tight">
-              Interactive Chess Board
+            <h1 className="text-3xl font-extrabold font-display text-white tracking-tight">
+              Interactive Board
             </h1>
-            <p className="text-zinc-400 text-sm">
-              Practice moves, validate logic, and save your matches to history.
+            <p className="text-zinc-400 text-xs font-light">
+              Practice coordinate systems, validate game rules, and record matches to profile logs.
             </p>
           </div>
         </div>
 
-        {/* Play layout grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Chessboard & Statuses */}
-          <div className="lg:col-span-7 flex flex-col gap-4 items-center">
-            {/* Player tags */}
-            <div className="w-full max-w-[500px] flex justify-between items-center bg-zinc-900/50 border border-zinc-800/60 px-4 py-2.5 rounded-lg text-sm">
-              <span className="flex items-center gap-2 text-zinc-300 font-semibold">
-                <User className={`w-4 h-4 ${boardOrientation === 'white' ? 'text-zinc-500' : 'text-zinc-300'}`} />
+        {/* Play layout grid: 3 Columns on desktop (65%, 20%, 15%) */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/* Column 1: Chessboard & Statuses (65%) */}
+          <div className="w-full lg:w-[65%] flex flex-col gap-4 items-center">
+            
+            {/* Player tags - Minimalist */}
+            <div className="w-full max-w-[500px] flex justify-between items-center bg-zinc-950/40 border border-white/5 px-4 py-2 rounded-xl text-xs">
+              <span className="flex items-center gap-2 text-zinc-400 font-medium">
+                <User className="w-3.5 h-3.5 text-zinc-500" strokeWidth={1.5} />
                 {boardOrientation === 'white' ? 'Opponent (Black)' : 'You (Black)'}
               </span>
-              <span className="text-xs bg-zinc-800 text-zinc-400 font-medium px-2 py-0.5 rounded">1600 ELO</span>
+              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">1600 ELO</span>
             </div>
 
             {/* Board Container */}
-            <div className="w-full max-w-[500px] aspect-square rounded-xl overflow-hidden border-2 border-zinc-800 shadow-2xl relative">
+            <div className="w-full max-w-[500px] aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
               <Chessboard
                 options={{
                   position: gameFen,
                   onPieceDrop: onDrop,
                   boardOrientation: boardOrientation,
-                  darkSquareStyle: { backgroundColor: '#706677' },
-                  lightSquareStyle: { backgroundColor: '#ded6e0' },
+                  darkSquareStyle: { backgroundColor: '#2e2e33' },
+                  lightSquareStyle: { backgroundColor: '#e4e4e7' },
                 }}
               />
             </div>
 
-            {/* User tag */}
-            <div className="w-full max-w-[500px] flex justify-between items-center bg-zinc-900/50 border border-zinc-800/60 px-4 py-2.5 rounded-lg text-sm">
-              <span className="flex items-center gap-2 text-zinc-300 font-semibold">
-                <User className={`w-4 h-4 ${boardOrientation === 'white' ? 'text-zinc-300' : 'text-zinc-500'}`} />
+            {/* User tag - Minimalist */}
+            <div className="w-full max-w-[500px] flex justify-between items-center bg-zinc-950/40 border border-white/5 px-4 py-2 rounded-xl text-xs">
+              <span className="flex items-center gap-2 text-zinc-400 font-medium">
+                <User className="w-3.5 h-3.5 text-zinc-300" strokeWidth={1.5} />
                 {boardOrientation === 'white' ? 'You (White)' : 'Opponent (White)'}
               </span>
-              <span className="text-xs bg-amber-400/10 text-amber-400 border border-amber-400/20 font-medium px-2 py-0.5 rounded">Active</span>
+              <span className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Active</span>
             </div>
 
             {/* Status alerts */}
             <div className="w-full max-w-[500px] space-y-2">
               {isCheck && !isCheckmate && (
-                <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm px-4 py-3 rounded-lg font-semibold text-left">
-                  <ShieldAlert className="w-5 h-5 shrink-0" />
-                  <span>Check! {turn === 'w' ? 'White' : 'Black'} is under attack.</span>
+                <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/10 text-amber-500 text-xs px-4 py-3 rounded-xl font-medium text-left">
+                  <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                  <span>Check! {turn === 'w' ? 'White' : 'Black'} king is under attack.</span>
                 </div>
               )}
               {isCheckmate && (
-                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg font-semibold text-left">
-                  <Award className="w-5 h-5 shrink-0" />
-                  <span>Checkmate! Game Over. {turn === 'w' ? 'Black' : 'White'} wins the game!</span>
+                <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-xs px-4 py-3 rounded-xl font-medium text-left">
+                  <Award className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                  <span>Checkmate. {turn === 'w' ? 'Black' : 'White'} wins the match.</span>
                 </div>
               )}
               {isDraw && (
-                <div className="flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-sm px-4 py-3 rounded-lg font-semibold text-left">
-                  <ShieldAlert className="w-5 h-5 shrink-0" />
-                  <span>Draw! The game has ended in a tie.</span>
+                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-4 py-3 rounded-xl font-medium text-left">
+                  <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                  <span>Draw. The match ended in a tie.</span>
                 </div>
               )}
               {isStalemate && (
-                <div className="flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-sm px-4 py-3 rounded-lg font-semibold text-left">
-                  <ShieldAlert className="w-5 h-5 shrink-0" />
-                  <span>Stalemate! No legal moves. Game is drawn.</span>
+                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-4 py-3 rounded-xl font-medium text-left">
+                  <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                  <span>Stalemate. No legal moves remaining.</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right Column: Move history & Control Panel */}
-          <div className="lg:col-span-5 flex flex-col gap-6 text-left">
-            {/* Control Panel Card */}
-            <Card className="bg-zinc-900/40 border-zinc-800 p-5 space-y-4">
-              <h3 className="font-display font-bold text-lg text-zinc-100">Controls</h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={handleToggleOrientation}
-                  className="flex items-center gap-2 justify-center py-2.5"
-                >
-                  <ArrowLeftRight className="w-4 h-4" />
-                  Flip Board
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleReset}
-                  className="flex items-center gap-2 justify-center py-2.5 text-zinc-400 hover:text-white"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset Board
-                </Button>
-              </div>
+          {/* Column 2: Move History (20%) */}
+          <div className="w-full lg:w-[20%] flex flex-col gap-4 text-left">
+            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+              <h3 className="font-display font-semibold text-sm text-zinc-200">Move Log</h3>
+              <span className="text-[10px] bg-zinc-900 border border-white/5 px-2 py-0.5 rounded-full font-mono text-zinc-500">
+                {game.history().length} plies
+              </span>
+            </div>
+            {renderMoveHistory()}
+          </div>
 
+          {/* Column 3: Control Panel (15%) */}
+          <div className="w-full lg:w-[15%] flex flex-col gap-4 text-left">
+            <h3 className="font-display font-semibold text-sm text-zinc-200 border-b border-white/5 pb-2">Controls</h3>
+            
+            <div className="flex flex-col gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleToggleOrientation}
+                className="w-full flex items-center gap-2 justify-center py-2 h-10 text-xs"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Flip Board
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleReset}
+                className="w-full flex items-center gap-2 justify-center py-2 h-10 text-xs text-zinc-400 hover:text-white"
+              >
+                <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Reset Board
+              </Button>
+              
               <Button
                 variant="primary"
                 onClick={handleOpenSaveModal}
                 disabled={game.history().length === 0}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-tr from-violet-600 to-violet-500"
+                className="w-full flex items-center justify-center gap-2 py-2 h-10 text-xs"
               >
-                <Save className="w-4 h-4" />
-                Save Match to Profile
+                <Save className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Save Match
               </Button>
-            </Card>
-
-            {/* Move History Card */}
-            <Card className="bg-zinc-900/40 border-zinc-800 p-5 flex-1 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-display font-bold text-lg text-zinc-100">Move History</h3>
-                <span className="text-xs bg-zinc-800 border border-zinc-700/60 px-2 py-0.5 rounded font-mono text-zinc-400">
-                  {game.history().length} plies
-                </span>
-              </div>
-              {renderMoveHistory()}
-            </Card>
+            </div>
           </div>
+
         </div>
       </div>
 
       {/* Save Game Modal */}
       {isSaveModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
-          <Card className="w-full max-w-md bg-zinc-900 border-zinc-800 p-6 space-y-6 text-left shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <Card className="w-full max-w-sm bg-zinc-950 border-white/5 p-6 space-y-6 text-left shadow-2xl relative rounded-2xl">
             <div>
-              <h3 className="font-display font-bold text-xl text-gradient">Save Chess Match</h3>
-              <p className="text-zinc-400 text-xs mt-1">
-                Record your game metrics and PGN to access later in history.
+              <h3 className="font-display font-bold text-lg text-white">Save Chess Match</h3>
+              <p className="text-zinc-500 text-xs mt-1">
+                Record your match coordinates and outcomes to history.
               </p>
             </div>
 
             {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-3.5 py-2.5 rounded-lg font-semibold">
+              <div className="bg-red-500/10 border border-red-500/25 text-red-450 text-xs px-3.5 py-2.5 rounded-lg font-semibold">
                 {errorMsg}
               </div>
             )}
 
             <form onSubmit={handleSaveGame} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Opponent Name</label>
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Opponent Name</label>
                 <input
                   type="text"
                   value={opponentName}
                   onChange={(e) => setOpponentName(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-violet-500 focus:outline-none rounded-lg px-3.5 py-2.5 text-sm text-zinc-200"
-                  placeholder="e.g. Computer, Local Player, Friend"
+                  className="w-full bg-zinc-950 border border-white/10 focus:border-brand-accent/50 focus:ring-4 focus:ring-brand-accent/10 focus:outline-none rounded-lg px-3 py-2.5 text-sm text-zinc-200 transition-all duration-300"
+                  placeholder="e.g. Computer, Friend"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Match Result</label>
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Match Result</label>
                 <select
                   value={customResult}
                   onChange={(e) => setCustomResult(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-violet-500 focus:outline-none rounded-lg px-3.5 py-2.5 text-sm text-zinc-200"
+                  className="w-full bg-zinc-950 border border-white/10 focus:border-brand-accent/50 focus:ring-4 focus:ring-brand-accent/10 focus:outline-none rounded-lg px-3 py-2.5 text-sm text-zinc-200 transition-all duration-300"
                 >
                   <option value="WHITE_WIN">White Wins (1-0)</option>
                   <option value="BLACK_WIN">Black Wins (0-1)</option>
@@ -347,14 +347,14 @@ export const PlayGame: React.FC = () => {
                 </select>
               </div>
 
-              <div className="bg-zinc-950/60 border border-zinc-800/40 rounded-lg p-3 text-xs space-y-1.5 font-mono text-zinc-400">
+              <div className="bg-zinc-950 border border-white/5 rounded-lg p-3 text-xs space-y-1.5 font-mono text-zinc-500">
                 <div className="flex justify-between">
                   <span>Color:</span>
-                  <span className="text-zinc-200 uppercase">{boardOrientation}</span>
+                  <span className="text-zinc-300 uppercase">{boardOrientation}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total Moves:</span>
-                  <span className="text-zinc-200">{Math.ceil(game.history().length / 2)}</span>
+                  <span className="text-zinc-300">{Math.ceil(game.history().length / 2)}</span>
                 </div>
               </div>
 
@@ -363,7 +363,7 @@ export const PlayGame: React.FC = () => {
                   type="button"
                   variant="outline"
                   onClick={() => setIsSaveModalOpen(false)}
-                  className="flex-1 py-2.5"
+                  className="flex-1 py-2"
                   disabled={isSaving}
                 >
                   Cancel
@@ -371,7 +371,7 @@ export const PlayGame: React.FC = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="flex-1 py-2.5 bg-gradient-to-tr from-violet-600 to-violet-500"
+                  className="flex-1 py-2 bg-white text-zinc-950 hover:bg-zinc-200"
                   isLoading={isSaving}
                 >
                   Confirm & Save

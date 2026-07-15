@@ -130,27 +130,27 @@ export const MyGames: React.FC = () => {
     }
 
     if (rows.length === 0) {
-      return <div className="text-zinc-500 text-sm">No moves recorded in this match.</div>;
+      return <div className="text-zinc-550 text-xs font-light text-center py-6">No moves recorded.</div>;
     }
 
     return (
-      <div className="overflow-y-auto max-h-[340px] border border-zinc-800/60 rounded-lg bg-zinc-950/40 p-2 text-left font-mono">
-        <div className="grid grid-cols-12 gap-1 text-zinc-500 text-xs font-semibold px-2 py-1 uppercase tracking-wider border-b border-zinc-900/60 mb-2">
+      <div className="overflow-y-auto max-h-[340px] border border-white/5 rounded-xl bg-zinc-950/40 p-2 text-left font-mono">
+        <div className="grid grid-cols-12 gap-1 text-zinc-500 text-[10px] font-bold px-2 py-1 uppercase tracking-wider border-b border-white/5 mb-2">
           <div className="col-span-2 text-center">#</div>
           <div className="col-span-5">White</div>
           <div className="col-span-5">Black</div>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {rows.map((row) => (
-            <div key={row.num} className="grid grid-cols-12 gap-1 text-sm py-1.5 px-2 rounded hover:bg-zinc-800/10 transition-colors">
-              <div className="col-span-2 text-zinc-600 text-center font-sans font-semibold border-r border-zinc-900/40">
+            <div key={row.num} className="grid grid-cols-12 gap-1 text-xs py-1 px-2 rounded hover:bg-white/[0.01] transition-colors">
+              <div className="col-span-2 text-zinc-600 text-center font-sans font-semibold border-r border-white/5">
                 {row.num}
               </div>
               <div 
                 className={`col-span-5 px-2 py-0.5 rounded cursor-pointer transition-colors ${
                   activeMoveIndex === row.whiteIndex 
-                    ? 'bg-violet-600/30 text-violet-300 font-bold border border-violet-500/20' 
-                    : 'text-zinc-300 hover:bg-zinc-850 hover:text-white'
+                    ? 'bg-white/10 text-white font-bold' 
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
                 }`}
                 onClick={() => setActiveMoveIndex(row.whiteIndex)}
               >
@@ -161,8 +161,8 @@ export const MyGames: React.FC = () => {
                   <div 
                     className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
                       activeMoveIndex === row.blackIndex 
-                        ? 'bg-violet-600/30 text-violet-300 font-bold border border-violet-500/20' 
-                        : 'text-zinc-300 hover:bg-zinc-850 hover:text-white'
+                        ? 'bg-white/10 text-white font-bold' 
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
                     }`}
                     onClick={() => setActiveMoveIndex(row.blackIndex)}
                   >
@@ -181,148 +181,150 @@ export const MyGames: React.FC = () => {
     <Layout>
       {selectedGame ? (
         /* ==================== REPLAY VIEW ==================== */
-        <div className="space-y-6">
+        <div className="space-y-12 animate-fade-in text-left">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900/80 pb-4 text-left">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedGame(null)}
-              className="w-fit flex items-center gap-1.5 text-zinc-400 hover:text-white"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Game History
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-white/5 pb-6">
+            <div className="space-y-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedGame(null)}
+                className="w-fit flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors px-0"
+              >
+                <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+                Back to Game History
+              </Button>
 
-            <div className="space-y-1">
-              <h2 className="text-xl font-bold font-display text-zinc-200">
-                Replaying match against <span className="text-gradient">{selectedGame.opponentName}</span>
-              </h2>
-              <p className="text-xs text-zinc-500 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                {formatDate(selectedGame.createdAt)} • {formatResult(selectedGame.result)}
-              </p>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold font-display text-white tracking-tight">
+                  Replaying vs {selectedGame.opponentName}
+                </h2>
+                <p className="text-xs text-zinc-500 flex items-center gap-1 font-light">
+                  <Calendar className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  {formatDate(selectedGame.createdAt)} • {formatResult(selectedGame.result)}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Grid Layout */}
+          {/* Grid Layout - Video Analyzer Feel */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Chessboard (Left) */}
-            <div className="lg:col-span-7 flex flex-col gap-4 items-center">
+            {/* Chessboard & Sliders (Left - Col Span 7) */}
+            <div className="lg:col-span-7 flex flex-col gap-6 items-center">
               {/* Opponent tag */}
-              <div className="w-full max-w-[480px] flex justify-between items-center bg-zinc-900/40 border border-zinc-800/40 px-3.5 py-2 rounded-lg text-sm">
+              <div className="w-full max-w-[480px] flex justify-between items-center bg-zinc-950/40 border border-white/5 px-4 py-2 rounded-xl text-xs">
                 <span className="flex items-center gap-2 text-zinc-400 font-medium">
-                  <User className="w-4 h-4" />
+                  <User className="w-3.5 h-3.5 text-zinc-500" strokeWidth={1.5} />
                   {selectedGame.playerColor === 'WHITE' ? selectedGame.opponentName : 'You'}
                 </span>
-                <span className="text-xs font-semibold text-zinc-500">{selectedGame.playerColor === 'WHITE' ? 'Black' : 'White'}</span>
+                <span className="text-[10px] font-bold text-zinc-550 uppercase tracking-widest">{selectedGame.playerColor === 'WHITE' ? 'Black' : 'White'}</span>
               </div>
 
               {/* Interactive Board container */}
-              <div className="w-full max-w-[480px] aspect-square rounded-xl overflow-hidden border-2 border-zinc-800 shadow-2xl">
+              <div className="w-full max-w-[480px] aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-zinc-950 p-2">
                 <Chessboard
                   options={{
                     position: getActiveFen(),
                     boardOrientation: selectedGame.playerColor.toLowerCase() as 'white' | 'black',
                     allowDragging: false, // Disable dragging in replay
-                    darkSquareStyle: { backgroundColor: '#706677' },
-                    lightSquareStyle: { backgroundColor: '#ded6e0' },
+                    darkSquareStyle: { backgroundColor: '#2e2e33' },
+                    lightSquareStyle: { backgroundColor: '#e4e4e7' }
                   }}
                 />
               </div>
 
               {/* User tag */}
-              <div className="w-full max-w-[480px] flex justify-between items-center bg-zinc-900/40 border border-zinc-800/40 px-3.5 py-2 rounded-lg text-sm">
+              <div className="w-full max-w-[480px] flex justify-between items-center bg-zinc-950/40 border border-white/5 px-4 py-2 rounded-xl text-xs">
                 <span className="flex items-center gap-2 text-zinc-400 font-medium">
-                  <User className="w-4 h-4" />
+                  <User className="w-3.5 h-3.5 text-zinc-300" strokeWidth={1.5} />
                   {selectedGame.playerColor === 'WHITE' ? 'You' : selectedGame.opponentName}
                 </span>
-                <span className="text-xs font-semibold text-zinc-500">{selectedGame.playerColor === 'WHITE' ? 'White' : 'Black'}</span>
+                <span className="text-[10px] font-bold text-zinc-550 uppercase tracking-widest">{selectedGame.playerColor === 'WHITE' ? 'White' : 'Black'}</span>
               </div>
 
-              {/* Slider and Replay Buttons */}
-              <div className="w-full max-w-[480px] space-y-4 pt-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-zinc-500">0</span>
+              {/* Slider and Replay Buttons - Apple style slider */}
+              <div className="w-full max-w-[480px] space-y-6 pt-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold font-mono text-zinc-600">0</span>
                   <input
                     type="range"
                     min="0"
                     max={replayMoves.length}
                     value={activeMoveIndex}
                     onChange={(e) => setActiveMoveIndex(parseInt(e.target.value))}
-                    className="flex-1 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-violet-500"
+                    className="flex-1 h-1 bg-zinc-900 border border-white/5 rounded-full appearance-none cursor-pointer accent-white"
                   />
-                  <span className="text-xs font-mono text-zinc-500">{replayMoves.length}</span>
+                  <span className="text-[10px] font-bold font-mono text-zinc-650">{replayMoves.length}</span>
                 </div>
 
-                <div className="flex justify-center items-center gap-1.5">
+                <div className="flex justify-center items-center gap-2">
                   <Button
                     variant="outline"
-                    className="p-2 border-zinc-800 hover:bg-zinc-800/40 text-zinc-400 hover:text-white"
+                    className="p-2 h-9 w-9 rounded-full border-white/5 hover:bg-white/5 text-zinc-400 hover:text-white flex items-center justify-center"
                     disabled={activeMoveIndex === 0}
                     onClick={() => setActiveMoveIndex(0)}
                   >
-                    <ChevronsLeft className="w-5 h-5" />
+                    <ChevronsLeft className="w-4 h-4" strokeWidth={1.5} />
                   </Button>
                   <Button
                     variant="outline"
-                    className="p-2 border-zinc-800 hover:bg-zinc-800/40 text-zinc-400 hover:text-white"
+                    className="p-2 h-9 w-9 rounded-full border-white/5 hover:bg-white/5 text-zinc-400 hover:text-white flex items-center justify-center"
                     disabled={activeMoveIndex === 0}
                     onClick={() => setActiveMoveIndex(prev => Math.max(0, prev - 1))}
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
                   </Button>
                   
-                  <span className="px-4 font-mono text-sm text-zinc-300 font-semibold">
-                    Move {activeMoveIndex} / {replayMoves.length}
+                  <span className="px-4 font-mono text-xs text-zinc-400 font-semibold">
+                    Ply {activeMoveIndex} / {replayMoves.length}
                   </span>
 
                   <Button
                     variant="outline"
-                    className="p-2 border-zinc-800 hover:bg-zinc-800/40 text-zinc-400 hover:text-white"
+                    className="p-2 h-9 w-9 rounded-full border-white/5 hover:bg-white/5 text-zinc-400 hover:text-white flex items-center justify-center"
                     disabled={activeMoveIndex === replayMoves.length}
                     onClick={() => setActiveMoveIndex(prev => Math.min(replayMoves.length, prev + 1))}
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
                   </Button>
                   <Button
                     variant="outline"
-                    className="p-2 border-zinc-800 hover:bg-zinc-800/40 text-zinc-400 hover:text-white"
+                    className="p-2 h-9 w-9 rounded-full border-white/5 hover:bg-white/5 text-zinc-400 hover:text-white flex items-center justify-center"
                     disabled={activeMoveIndex === replayMoves.length}
                     onClick={() => setActiveMoveIndex(replayMoves.length)}
                   >
-                    <ChevronsRight className="w-5 h-5" />
+                    <ChevronsRight className="w-4 h-4" strokeWidth={1.5} />
                   </Button>
                 </div>
               </div>
             </div>
 
-            {/* Replay Details Panel (Right) */}
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <Card className="bg-zinc-900/40 border-zinc-800 p-5 space-y-4">
-                <h3 className="font-display font-bold text-lg text-zinc-100 flex items-center gap-2">
-                  <Info className="w-4 h-4 text-violet-400" />
+            {/* Replay Details & Move Logs (Right - Col Span 5) */}
+            <div className="lg:col-span-5 space-y-6">
+              <Card className="bg-zinc-950/20 border-white/5 p-5 space-y-4 rounded-2xl shadow-lg">
+                <h3 className="font-display font-semibold text-sm text-white flex items-center gap-2 border-b border-white/5 pb-2">
+                  <Info className="w-4 h-4 text-zinc-400" strokeWidth={1.5} />
                   Match Details
                 </h3>
                 
-                <div className="bg-zinc-950/60 border border-zinc-800/40 rounded-lg p-4 text-sm divide-y divide-zinc-900/60 font-medium text-zinc-400">
-                  <div className="flex justify-between py-2.5">
+                <div className="space-y-3 text-xs font-semibold text-zinc-500">
+                  <div className="flex justify-between py-1 border-b border-white/5">
                     <span>Opponent:</span>
                     <span className="text-zinc-200">{selectedGame.opponentName}</span>
                   </div>
-                  <div className="flex justify-between py-2.5">
-                    <span>Player Color:</span>
+                  <div className="flex justify-between py-1 border-b border-white/5">
+                    <span>Color:</span>
                     <span className="text-zinc-200 uppercase">{selectedGame.playerColor}</span>
                   </div>
-                  <div className="flex justify-between py-2.5">
+                  <div className="flex justify-between py-1 border-b border-white/5">
                     <span>Result:</span>
                     <span className="text-zinc-200">{formatResult(selectedGame.result)}</span>
                   </div>
-                  <div className="flex justify-between py-2.5">
-                    <span>Moves Played:</span>
-                    <span className="text-zinc-200">{selectedGame.moveCount} full moves</span>
+                  <div className="flex justify-between py-1 border-b border-white/5">
+                    <span>Moves Count:</span>
+                    <span className="text-zinc-200">{selectedGame.moveCount} moves</span>
                   </div>
-                  <div className="flex justify-between py-2.5">
+                  <div className="flex justify-between py-1">
                     <span>Recorded:</span>
                     <span className="text-zinc-200">{formatDate(selectedGame.createdAt)}</span>
                   </div>
@@ -330,30 +332,30 @@ export const MyGames: React.FC = () => {
               </Card>
 
               {/* Move history list */}
-              <Card className="bg-zinc-900/40 border-zinc-800 p-5 flex flex-col gap-4">
-                <h3 className="font-display font-bold text-lg text-zinc-100">Moves List</h3>
+              <div className="space-y-3">
+                <h3 className="font-display font-semibold text-sm text-zinc-200">Move Sequence</h3>
                 {renderReplayMoveList()}
-              </Card>
+              </div>
             </div>
           </div>
         </div>
       ) : (
         /* ==================== LIST VIEW ==================== */
-        <div className="space-y-6">
+        <div className="space-y-8 animate-fade-in text-left">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-left">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="space-y-1">
-              <h1 className="text-2xl md:text-3xl font-extrabold font-display text-zinc-100 tracking-tight">
-                My Games
+              <h1 className="text-3xl font-extrabold font-display text-white tracking-tight">
+                Match History
               </h1>
-              <p className="text-zinc-400 text-sm">
-                View your complete saved game history, review moves, or delete records.
+              <p className="text-zinc-400 text-xs font-light">
+                Study and audit your complete chess logs, play coordinate replays, or delete obsolete records.
               </p>
             </div>
           </div>
 
           {errorMsg && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg font-semibold text-left">
+            <div className="bg-red-500/5 border border-red-500/10 text-red-400 text-xs px-4 py-3 rounded-xl font-medium">
               {errorMsg}
             </div>
           )}
@@ -362,39 +364,39 @@ export const MyGames: React.FC = () => {
             /* Loading skeletons */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[1, 2, 3, 4].map(idx => (
-                <div key={idx} className="h-44 rounded-xl border border-zinc-850 bg-zinc-900/20 animate-pulse" />
+                <div key={idx} className="h-36 rounded-2xl border border-white/5 bg-zinc-900/10 animate-pulse" />
               ))}
             </div>
           ) : games.length === 0 ? (
             /* Empty state */
-            <Card className="flex flex-col items-center justify-center p-12 bg-zinc-900/20 border-dashed border-zinc-800 text-center space-y-4">
-              <div className="p-4 bg-zinc-900/80 rounded-full border border-zinc-800 text-zinc-500">
-                <Calendar className="w-8 h-8" />
+            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/5 rounded-2xl text-center space-y-4">
+              <div className="p-3 bg-zinc-950/80 rounded-full border border-white/5 text-zinc-650">
+                <Calendar className="w-6 h-6" strokeWidth={1.5} />
               </div>
               <div className="space-y-1 max-w-sm">
-                <h3 className="font-bold text-zinc-200 text-lg">No Saved Games</h3>
-                <p className="text-zinc-400 text-sm">
-                  You haven't saved any chess matches yet. Play a match and record it to your profile.
+                <h3 className="font-semibold text-zinc-300 text-sm">No recorded games</h3>
+                <p className="text-zinc-500 text-xs font-light leading-relaxed">
+                  You haven't logged any matches yet. Click "Play Chess" in the actions menu to save your first game.
                 </p>
               </div>
-            </Card>
+            </div>
           ) : (
             /* Games Grid List */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {games.map((game) => (
-                <Card 
+                <div 
                   key={game.id} 
-                  className="flex flex-col justify-between p-5 bg-zinc-900/40 border-zinc-800 hover:scale-[1.01] hover:bg-zinc-900/50 cursor-pointer text-left"
+                  className="flex flex-col justify-between p-6 border border-white/5 bg-zinc-950/20 hover:border-white/10 hover:bg-zinc-900/10 rounded-2xl cursor-pointer transition-all duration-300 group"
                   onClick={() => setSelectedGame(game)}
                 >
                   <div className="space-y-3.5">
                     {/* Header */}
                     <div className="flex items-start justify-between">
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] bg-zinc-800 border border-zinc-700/60 text-zinc-400 font-semibold px-2 py-0.5 rounded uppercase tracking-wider">
+                      <div className="space-y-1">
+                        <span className="text-[9px] border border-white/5 text-zinc-500 font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
                           As {game.playerColor}
                         </span>
-                        <h4 className="font-bold text-lg text-zinc-100 font-display mt-1.5 flex items-center gap-1.5">
+                        <h4 className="font-bold text-base text-zinc-200 font-display mt-2 flex items-center gap-1.5 group-hover:text-white transition-colors">
                           vs {game.opponentName}
                         </h4>
                       </div>
@@ -402,37 +404,37 @@ export const MyGames: React.FC = () => {
                       {/* Delete icon */}
                       <button 
                         onClick={(e) => handleDeleteGame(game.id, e)}
-                        className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       >
-                        <Trash2 className="w-4.5 h-4.5" />
+                        <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                       </button>
                     </div>
 
                     {/* Result badge */}
-                    <div className="text-sm font-semibold flex items-center gap-1.5">
-                      <span className={`h-2 w-2 rounded-full ${
+                    <div className="text-xs font-semibold flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${
                         game.result.includes('WHITE_WIN') && game.playerColor === 'WHITE' || 
                         game.result.includes('BLACK_WIN') && game.playerColor === 'BLACK' 
                           ? 'bg-emerald-500' 
                           : game.result === 'DRAW' 
-                            ? 'bg-sky-500' 
-                            : 'bg-zinc-500'
+                            ? 'bg-zinc-500' 
+                            : 'bg-zinc-700'
                       }`} />
-                      <span className="text-zinc-300">{formatResult(game.result)}</span>
+                      <span className="text-zinc-400 font-light">{formatResult(game.result)}</span>
                     </div>
                   </div>
 
                   {/* Footer details */}
-                  <div className="flex items-center justify-between pt-4 border-t border-zinc-900/60 mt-4 text-xs text-zinc-500">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-6 text-[10px] text-zinc-550 font-bold uppercase tracking-wider">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
                       {game.moveCount} moves
                     </span>
-                    <span className="font-medium">
+                    <span className="font-semibold text-zinc-500">
                       {formatDate(game.createdAt).split(',')[0]}
                     </span>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           )}

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';
-import { LogIn, HelpCircle } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
@@ -56,32 +56,30 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-height-screen flex flex-col items-center justify-center px-4 py-12 md:py-24">
-      {/* Visual Floating Chess piece background logo */}
-      <div className="absolute top-10 flex items-center gap-2 select-none">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-600 to-sky-400 flex items-center justify-center shadow-lg shadow-violet-500/20">
-          <span className="font-display font-extrabold text-white text-xl">Ch</span>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative">
+      {/* Visual Floating Chess piece background logo linking to Landing */}
+      <Link to="/" className="absolute top-10 flex items-center gap-2 select-none hover:opacity-90 transition-opacity">
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-violet-600 to-sky-400 flex items-center justify-center shadow-md">
+          <span className="font-display font-extrabold text-white text-sm">Ch</span>
         </div>
-        <span className="font-display font-bold text-2xl tracking-wider text-white">Chaturang</span>
-      </div>
+        <span className="font-display font-bold text-lg tracking-wider text-white">Chaturang</span>
+      </Link>
 
-      <Card className="w-full max-w-md glass-panel relative overflow-hidden mt-8">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-violet-500 to-transparent" />
-        
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center mb-2">
-            <LogIn className="w-6 h-6 text-violet-400" />
+      <Card className="w-full max-w-sm bg-zinc-950 border-white/5 rounded-2xl relative overflow-hidden mt-8 shadow-2xl p-6">
+        <CardHeader className="text-center pb-6">
+          <div className="mx-auto w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3 text-white">
+            <LogIn className="w-5 h-5" strokeWidth={1.5} />
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your dashboard
+          <CardTitle className="text-xl font-bold font-display text-white">Welcome Back</CardTitle>
+          <CardDescription className="text-zinc-400 text-xs mt-1">
+            Enter your credentials to study chess blunder patterns
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {apiError && (
-              <div className="p-3.5 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300 text-xs font-medium animate-fadeIn">
+              <div className="p-3 rounded-lg bg-red-950/20 border border-red-500/20 text-red-400 text-xs font-semibold text-left">
                 {apiError}
               </div>
             )}
@@ -111,7 +109,7 @@ export const Login: React.FC = () => {
 
             <Button
               type="submit"
-              className="w-full mt-2"
+              className="w-full mt-4"
               isLoading={isLoading}
             >
               Sign In
@@ -119,24 +117,15 @@ export const Login: React.FC = () => {
           </form>
         </CardContent>
 
-        <CardFooter className="justify-center">
-          <p className="text-xs text-zinc-400">
+        <CardFooter className="justify-center pt-6 mt-4 border-t border-white/5">
+          <p className="text-xs text-zinc-500">
             Don't have an account?{' '}
-            <Link to="/register" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
+            <Link to="/register" className="text-white hover:underline font-semibold transition-colors">
               Sign Up
             </Link>
           </p>
         </CardFooter>
       </Card>
-
-      {/* Rationale widget */}
-      <div className="w-full max-w-md mt-6 p-4 rounded-xl border border-zinc-800/40 bg-zinc-950/20 text-zinc-400 flex gap-3 text-xs leading-relaxed">
-        <HelpCircle className="w-5 h-5 text-violet-400 shrink-0" />
-        <div>
-          <span className="font-semibold text-zinc-300 block mb-0.5">Why Chaturang?</span>
-          Chaturang parses your chess records, isolates patterns in your blunders, and tells you what to study. Register to start importing your games.
-        </div>
-      </div>
     </div>
   );
 };

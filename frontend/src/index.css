@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,52 +6,78 @@
   --font-display: 'Outfit', system-ui, sans-serif;
 
   /* Custom HSL-tailored colors for chess theme */
-  --color-brand-primary: hsl(263, 90%, 50%);       /* Vibrant violet */
-  --color-brand-primary-hover: hsl(263, 90%, 42%);
-  --color-brand-secondary: #0ea5e9;                  /* Sky blue */
-  --color-brand-accent: #f59e0b;                     /* Amber Gold */
+  --color-brand-primary: #ffffff;
+  --color-brand-primary-hover: #e4e4e7;
+  --color-brand-secondary: #18181b;                  
+  --color-brand-accent: #6d4aff;                     
+  --color-brand-accent-hover: #5835eb;
   
-  --color-dark-bg: #09090b;                          /* Deep dark zinc */
-  --color-dark-card: rgba(20, 20, 25, 0.65);         /* Transparent dark glass */
-  --color-dark-border: rgba(63, 63, 70, 0.4);       /* Subtle zinc border */
+  --color-dark-bg: #030303;                          
+  --color-dark-card: rgba(10, 10, 12, 0.65);         
+  --color-dark-border: rgba(255, 255, 255, 0.04);       
 }
 
 /* Core resets and base styles */
 :root {
   font-family: var(--font-sans);
   background-color: var(--color-dark-bg);
-  color: #f4f4f5;
+  color: #a1a1aa;
   color-scheme: dark;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: #030303;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 40%);
+    radial-gradient(circle at 50% 0%, rgba(109, 74, 255, 0.06), transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.007) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
   background-attachment: fixed;
   overflow-x: hidden;
+  position: relative;
 }
 
-/* Glassmorphism utility card */
+/* Noise effect overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Glassmorphism utility card - Keep it extremely subtle */
 .glass-panel {
-  background: var(--color-dark-card);
+  background: rgba(10, 10, 12, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-dark-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel:hover {
-  border-color: rgba(139, 92, 246, 0.4);
-  box-shadow: 0 12px 40px 0 rgba(139, 92, 246, 0.15);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  transform: translateY(-2px);
 }
 
-/* Premium gradient text */
+/* Premium gradient text - very subtle, mostly white to light gray */
 .text-gradient {
-  background: linear-gradient(135deg, #ffffff 30%, #c084fc 100%);
+  background: linear-gradient(135deg, #ffffff 40%, #d4d4d8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-purple {
+  background: linear-gradient(135deg, #ffffff 30%, #a78bfa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -64,26 +90,38 @@ body {
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: #030303;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 4px;
+  background: #18181b;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #27272a;
 }
 
 /* Micro-animations */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
 }
