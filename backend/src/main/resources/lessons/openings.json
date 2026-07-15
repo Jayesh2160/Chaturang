@@ -1,0 +1,38 @@
+[
+  {
+    "title": "The Italian Game",
+    "slug": "italian-game",
+    "category": "OPENINGS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 10,
+    "shortDescription": "Learn one of the oldest chess openings focusing on quick development and attacking f7.",
+    "content": "# The Italian Game\n\nThe Italian Game starts with:  \n1. **e4 e5**  \n2. **Nf3 Nc6**  \n3. **Bc4**\n\n[BOARD:r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R]\n\nWhite's third move, Bc4, activates the light-squared bishop and aims it directly at Black's weakest spot: the **f7 square**. The f7 pawn is vulnerable because it is defended only by Black's King.\n\n### Strategic Objectives\n- **Rapid Development:** White prepares to castle kingside next.\n- **Control the Center:** White establishes presence with e4 and Nf3.\n- **Pressure on f7:** Forces Black to play defensively.\n\n### Key Takeaways\n- Focuses on quick piece deployment and king safety.\n- Targets the weak f7 square.\n- Excellent for beginners to understand classic opening principles."
+  },
+  {
+    "title": "Sicilian Defense Basics",
+    "slug": "sicilian-defense",
+    "category": "OPENINGS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 12,
+    "shortDescription": "Discover the most popular fighting response to White's 1.e4.",
+    "content": "# The Sicilian Defense\n\nThe Sicilian Defense is Black's most aggressive response to White's 1.e4:  \n1. **e4 c5**\n\n[BOARD:rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR]\n\nBy playing c5, Black fights for the d4 square asymmetrical style. Instead of copying White with 1... e5, Black creates an unbalanced position where both sides have chances to play for a win.\n\n### Why Play the Sicilian?\n- **Counter-attack:** Black gets active counterplay on the queenside along the semi-open c-file.\n- **Center Fight:** Prevents White from easily building a dual-pawn center (d4 and e4).\n\n### Key Takeaways\n- Asymmetrical, sharp opening.\n- Fights for center using the side c-pawn.\n- Initiates active counterplay on the queenside."
+  },
+  {
+    "title": "The Ruy Lopez (Spanish)",
+    "slug": "ruy-lopez",
+    "category": "OPENINGS",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 15,
+    "shortDescription": "Understand the strategic Spanish opening that pressures Black's center defender.",
+    "content": "# The Ruy Lopez (Spanish Opening)\n\nThe Ruy Lopez starts with:  \n1. **e4 e5**  \n2. **Nf3 Nc6**  \n3. **Bb5**\n\n[BOARD:r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R]\n\nWhite moves the Bishop to b5, putting immediate pressure on the Knight on c6. This Knight defends Black's central pawn on e5. By threatening the defender, White makes long-term plans to control the center.\n\n### Black's Options\n- **3... a6:** The Morphy Defense, asking the White bishop to capture or retreat.\n- **3... Nf6:** The Berlin Defense, a rock-solid response.\n\n### Key Takeaways\n- Indirect attack on the e5 pawn by pressuring its defender.\n- Leads to deep, strategic middlegames.\n- A favorite opening among World Champions."
+  },
+  {
+    "title": "The Queen's Gambit",
+    "slug": "queens-gambit",
+    "category": "OPENINGS",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 14,
+    "shortDescription": "Explore the central pawn offering to gain active piece play.",
+    "content": "# The Queen's Gambit\n\nUnlike king-pawn openings, the Queen's Gambit starts with:  \n1. **d4 d5**  \n2. **c4**\n\n[BOARD:rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR]\n\nWhite offers the c4 pawn in exchange for control of the center. If Black captures with 2... dxc4 (Accepted), White can quickly play e4 or e3 to take over the center and recapture the pawn with the bishop.\n\n### Responses\n- **Queen's Gambit Declined (2... e6):** Black supports the d5 pawn, maintaining a firm hold on the center.\n- **Queen's Gambit Accepted (2... dxc4):** Black surrenders the center for open piece lines.\n\n### Key Takeaways\n- Not a true gambit, as White can always win the pawn back.\n- Focuses on central control and queen-side files.\n- High-level opening representing rich positional play."
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "title": "King Safety & Castling Shield",
+    "slug": "king-safety",
+    "category": "MIDDLEGAME",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 10,
+    "shortDescription": "Discover why keeping your King safe is your top priority in the middlegame.",
+    "content": "# King Safety in the Middlegame\n\nOnce the opening is complete and pieces are active, the middlegame begins. The number one priority is protecting your King. An exposed King can be easily checkmated or forced into giving up material to survive.\n\n[BOARD:r1bqk2r/pppp1ppp/2n2n2/4p3/1bB1P3/2NP1N2/PPP2PPP/R1BQK2R]\n\n### The Pawn Shield\nAfter castling, the three pawns in front of your King (f2, g2, h2 for White) act as a shield. Do not move these pawns unless absolutely necessary. Moving them creates weak squares (weaknesses) that enemy knights, bishops, and queens can infiltrate.\n\n### Key Takeaways\n- Keep your pawn shield intact.\n- Guard the back rank to avoid back-rank mate combinations.\n- Castle early to shelter your King before open files develop."
+  },
+  {
+    "title": "Creating Outposts for Knights",
+    "slug": "knight-outposts",
+    "category": "MIDDLEGAME",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 12,
+    "shortDescription": "Learn how to place your knights on unassailable squares in enemy territory.",
+    "content": "# Creating Knight Outposts\n\nAn **outpost** is a square, usually on the 4th, 5th, or 6th rank, that is protected by one of your pawns and cannot be attacked by an opponent's pawn. Knights are the best pieces to occupy outposts.\n\n[BOARD:r1bqkb1r/pp3ppp/2n1pn2/2pp2B1/3PP3/2N2N2/PPP2PPP/R2QKB1R]\n\n### The Power of an Outpost Knight\nWhen a Knight sits on a deep outpost (like d5 or e5):\n- It controls a large number of squares in enemy territory.\n- It cannot be driven away by pawns.\n- The opponent is often forced to trade a valuable Bishop for it, giving you a positional advantage.\n\n### Key Takeaways\n- Outposts are safe havens for pieces, especially Knights.\n- Look for squares that enemy pawns can no longer control (weak squares).\n- Support your outposts with adjacent pawns."
+  },
+  {
+    "title": "Open and Semi-Open Files",
+    "slug": "open-files",
+    "category": "MIDDLEGAME",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 11,
+    "shortDescription": "Harness the power of Rooks by placing them on columns free of pawns.",
+    "content": "# Open and Semi-Open Files\n\nRooks need open lines to be effective. \n- **Open File:** A column on the board that has no pawns of either color.\n- **Semi-Open File:** A column that has only opponent pawns, but none of your own.\n\n[BOARD:2kr3r/ppp2ppp/2n2n2/4p3/4P3/2P2B2/P1P2PPP/R1B2RK1]\n\nPlacing your Rooks (and sometimes Queen) on these files allows them to penetrate the enemy position, attack weak pawns, and control key horizontal ranks (especially the 7th rank).\n\n### Key Takeaways\n- Rooks belong on open files.\n- Double your rooks (stack them on the same file) to double their power.\n- Penetrating to the 7th rank is a massive strategic advantage."
+  },
+  {
+    "title": "Pawn Structure and Weaknesses",
+    "slug": "pawn-structure",
+    "category": "MIDDLEGAME",
+    "difficulty": "ADVANCED",
+    "estimatedMinutes": 15,
+    "shortDescription": "Understand how pawn structures shape plans and create permanent targets.",
+    "content": "# Pawn Structure Basics\n\nPawns are the bones of chess; they dictate where pieces can and cannot go. Unlike other pieces, pawns can never move backward. Therefore, every pawn move is permanent and leaves behind weak squares.\n\n[BOARD:rnbqkb1r/ppp2ppp/5n2/3pp3/3PP3/2N5/PPP2PPP/R1BQKBNR]\n\n### Common Pawn Weaknesses\n- **Isolated Pawn:** A pawn with no friendly pawns on adjacent files. It must be defended by pieces.\n- **Doubled Pawns:** Two pawns of the same color on the same file. They cannot protect each other.\n- **Passed Pawn:** A pawn that has no opposing pawns in front of it or on adjacent files. It is a potential queen.\n\n### Key Takeaways\n- Pawn moves create permanent structural changes.\n- Target opponent's isolated and doubled pawns.\n- Keep your own pawn chain connected."
+  }
+]

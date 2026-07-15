@@ -6,26 +6,33 @@ import { Card } from '../components/ui/Card';
 import { Layout } from '../components/Layout';
 import { gameService } from '../services/gameService';
 import type { GameResponse } from '../services/gameService';
+import { lessonService } from '../services/lessonService';
 import { BarChart2, BookOpen, Target, Play, Calendar, User, ArrowRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [games, setGames] = useState<GameResponse[]>([]);
+  const [completedLessonsCount, setCompletedLessonsCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadGames = async () => {
+    const loadDashboardData = async () => {
       try {
-        const data = await gameService.getGames();
-        setGames(data);
+        setIsLoading(true);
+        const [gamesData, progressData] = await Promise.all([
+          gameService.getGames(),
+          lessonService.getProgress()
+        ]);
+        setGames(gamesData);
+        setCompletedLessonsCount(progressData.completedCount);
       } catch (err) {
-        console.error('Failed to load games', err);
+        console.error('Failed to load dashboard data', err);
       } finally {
         setIsLoading(false);
       }
     };
-    loadGames();
+    loadDashboardData();
   }, []);
 
   // Get current time greeting
@@ -83,11 +90,16 @@ export const Dashboard: React.FC = () => {
           </Card>
 
           {/* Card 2: Lessons Completed */}
-          <Card className="flex flex-col justify-between p-5 bg-zinc-900/40 border-zinc-800">
+          <Card 
+            className="flex flex-col justify-between p-5 bg-zinc-900/40 border-zinc-800 hover:scale-[1.01] cursor-pointer"
+            onClick={() => navigate('/progress')}
+          >
             <div className="flex items-start justify-between">
               <div className="space-y-1 text-left">
                 <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">Lessons Completed</span>
-                <span className="text-4xl font-extrabold font-display text-gradient">0</span>
+                <span className="text-4xl font-extrabold font-display text-gradient">
+                  {completedLessonsCount !== null ? completedLessonsCount : '...'}
+                </span>
               </div>
               <div className="p-3 bg-sky-500/10 rounded-lg text-sky-400">
                 <BookOpen className="w-5 h-5" />

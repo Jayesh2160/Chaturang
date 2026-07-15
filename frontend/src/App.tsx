@@ -6,6 +6,9 @@ import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { PlayGame } from './pages/PlayGame';
 import { MyGames } from './pages/MyGames';
+import { Academy } from './pages/Academy';
+import { AcademyProgress } from './pages/AcademyProgress';
+import { LessonDetails } from './pages/LessonDetails';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -93,6 +96,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <MyGames />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/academy"
+            element={
+              <ProtectedRoute>
+                <Academy />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/academy/:slug"
+            element={
+              <ProtectedRoute>
+                <LessonDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/progress"
+            element={
+              <ProtectedRoute>
+                <AcademyProgress />
               </ProtectedRoute>
             }
           />

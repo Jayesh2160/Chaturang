@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Control of the Center",
+    "slug": "center-control",
+    "category": "STRATEGY",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 8,
+    "shortDescription": "Understand why controlling the four center squares controls the whole board.",
+    "content": "# Controlling the Center\n\nIn chess, the center consists of the four squares: **d4, e4, d5, and e5**.\n\n[BOARD:rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR]\n\nControlling these squares is the most important strategic concept. Think of the center as high ground in a battle. If you control the center:\n- Your pieces have more active paths to travel to the kingside or queenside.\n- The opponent's pieces are restricted and cannot cross the board easily.\n- You have space to mount attacks.\n\n### How to Control the Center\n1. Place pawns in the center (e4/d4).\n2. Develop Knights and Bishops to squares that attack the center (Nf3/Nc3/Bc4).\n\n### Key Takeaways\n- Dominate the d4, e4, d5, e5 squares.\n- Center control translates into piece mobility.\n- Attack the opponent's center pawns if they get too advanced."
+  },
+  {
+    "title": "Efficient Piece Development",
+    "slug": "piece-development",
+    "category": "STRATEGY",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 10,
+    "shortDescription": "Learn how to coordinate your pieces quickly to prepare for the battle.",
+    "content": "# Efficient Piece Development\n\nDevelopment is the process of moving your pieces from their starting squares to active squares where they can contribute to the game. \n\n[BOARD:r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R]\n\n### Golden Rules of Development\n- **Knights before Bishops:** Knights control fewer squares and have fewer optimal options, so they should be developed first (usually to f3 and c3) to clarify their role.\n- **Don't move the same piece twice:** Moving a piece twice in the opening wastes time (called **tempos**), allowing your opponent to develop faster.\n- **Don't bring the Queen out early:** The Queen is a target. If you bring her out too early, the opponent can develop their minor pieces while attacking your Queen, forcing her to run away.\n\n### Key Takeaways\n- Develop with threats whenever possible.\n- Castle quickly to complete development.\n- Connect your Rooks by moving the Queen off the 1st/8th rank."
+  },
+  {
+    "title": "Maximizing Piece Activity",
+    "slug": "piece-activity",
+    "category": "STRATEGY",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 12,
+    "shortDescription": "Discover how to evaluate piece power based on the squares they control.",
+    "content": "# Maximizing Piece Activity\n\nThe strength of a chess piece is not just its value (e.g. Knight = 3 points), but its **activity**—how many squares it controls and how many threats it creates.\n\n[BOARD:2kr3r/ppp2ppp/2n2n2/4p3/4P3/2P2B2/P1P2PPP/R1B2RK1]\n\n### Active vs. Passive Pieces\n- **Active Bishop:** Sits on a long diagonal unobstructed by its own pawns (e.g. a 'Good Bishop').\n- **Passive Bishop:** Blocked by its own pawns, acting like a tall pawn (e.g. a 'Bad Bishop').\n- **Knight on the Rim:** A knight on the edge of the board (like a3 or h3) controls only 4 squares. In the center, it controls 8. The saying goes: 'A knight on the rim is dim!'\n\n### Key Takeaways\n- Always look to improve your worst-placed piece.\n- Open diagonals for Bishops and files for Rooks.\n- Centralize Knights to maximize their reach."
+  },
+  {
+    "title": "Gaining Space Advantage",
+    "slug": "space-advantage",
+    "category": "STRATEGY",
+    "difficulty": "ADVANCED",
+    "estimatedMinutes": 15,
+    "shortDescription": "Learn how advanced pawns restrict enemy pieces and create mounting pressure.",
+    "content": "# Space Advantage\n\n**Space** refers to the number of squares you control behind your pawn lines. If your pawns are advanced further down the board than your opponent's pawns, you have a space advantage.\n\n[BOARD:rnbqkb1r/pp3ppp/2p1pn2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R]\n\n### Benefits of a Space Advantage\n- **Maneuverability:** Your pieces have plenty of room to move around and switch sides.\n- **Cramped Opponent:** The opponent's pieces are crowded together, blocking each other's path.\n- **Attacking Opportunities:** Cramped positions are highly vulnerable to breakthroughs and sacrifices.\n\n### Key Takeaways\n- Do not trade pieces when you have a space advantage, as trades relieve your opponent's cramp.\n- Use pawns to lock down space.\n- Break open the opponent's pawn chain when they are cramped."
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "title": "The Opposition",
+    "slug": "the-opposition",
+    "category": "ENDGAME",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 10,
+    "shortDescription": "Master the face-off between Kings that decides who controls the endgame.",
+    "content": "# The Opposition in the Endgame\n\n**Opposition** is a position in which two Kings stand on the same file, rank, or diagonal with only one empty square between them.\n\n[BOARD:4k3/8/8/4K3/8/8/8/8]\n\nWhen Kings face off, the player whose turn it is to move is at a disadvantage, because they must move their King aside and let the other King pass through. \n- **Having the Opposition:** Means your opponent must move, allowing your King to invade key squares.\n\n### Key Takeaways\n- Step up to face the opponent's King with one empty square between them.\n- Force the opposing King to move to the side.\n- Use the opposition to guide your pawns safely to promotion."
+  },
+  {
+    "title": "King Activity in the Endgame",
+    "slug": "king-activity",
+    "category": "ENDGAME",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 8,
+    "shortDescription": "Understand why the King changes from a target to a powerful attacking piece.",
+    "content": "# Active Kings in the Endgame\n\nIn the opening and middlegame, the King is vulnerable and must remain protected. However, in the endgame, once most of the pieces (especially Queens) are traded off, the threat of checkmate disappears. The King must now become an active fighting piece!\n\n[BOARD:8/8/p3k3/P3p3/2K1P3/8/8/8]\n\n### The Role of an Active King\n- **Targeting Weaknesses:** The King should march forward to attack enemy pawns.\n- **Supporting Pawns:** The King must guide its own passed pawns toward the promotion square.\n- **Restricting the Enemy King:** Blocking the opposing King from entering your territory.\n\n### Key Takeaways\n- Bring your King to the center as soon as Queens are traded.\n- An active King is worth a minor piece in the endgame.\n- Do not hide your King in the corner during the endgame."
+  },
+  {
+    "title": "The Rule of the Square",
+    "slug": "rule-of-the-square",
+    "category": "ENDGAME",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 10,
+    "shortDescription": "Learn how to instantly calculate if a King can catch a passed pawn.",
+    "content": "# The Rule of the Square\n\nThe **Rule of the Square** is a simple mental calculation tool to determine if the defending King can catch a passed pawn without having to calculate every move one-by-one.\n\n[BOARD:8/8/8/8/4P3/8/8/k3K3]\n\n### How to Create the Square\n1. Count the number of squares from the pawn to its promotion square (including the square it is on).\n2. Count the same number of squares to the side (toward the defending King).\n3. Draw a square containing these boundaries.\n4. **The Rule:** If the defending King can step inside the square (or land on its border) on its next move, it can catch and capture the pawn. If it cannot, the pawn will promote successfully!\n\n### Key Takeaways\n- Saves time and prevents calculation errors in critical games.\n- If the King is inside the square, it catches the pawn.\n- If the King is outside, the pawn promotes."
+  },
+  {
+    "title": "King & Pawn vs King",
+    "slug": "king-pawn-endgame",
+    "category": "ENDGAME",
+    "difficulty": "ADVANCED",
+    "estimatedMinutes": 15,
+    "shortDescription": "Discover the essential technical endgame to promote a single pawn.",
+    "content": "# King and Pawn vs King\n\nThis is the most fundamental endgame in chess. White has a King and a pawn, and Black has only a King. The goal is to either promote the pawn (White wins) or force a draw (Black holds).\n\n[BOARD:8/8/8/8/4P3/4K3/8/4k3]\n\n### Key Rules for the Attacker\n- **King in front:** The attacking King must stand in front of its own pawn (controlling the promotion squares) to guide it.\n- **Take the Opposition:** Keep facing the enemy king to force it aside.\n\n### Key Rules for the Defender\n- **Stay in front of the pawn:** Keep your King directly in front of the pawn.\n- **Retreat straight back:** When forced to retreat, move straight backward, not diagonally, to maintain opposition options.\n\n### Key Takeaways\n- If White's King is in front of the pawn and has opposition, White wins.\n- If the pawn advances in front of White's King, the game is usually a draw (stalemate)."
+  }
+]

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/Button';
-import { Award, LogOut, LayoutDashboard, Play, Calendar } from 'lucide-react';
+import { Award, LogOut, LayoutDashboard, Play, Calendar, BookOpen } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -22,6 +22,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Play Chess', path: '/play', icon: Play },
     { label: 'My Games', path: '/my-games', icon: Calendar },
+    { label: 'Academy', path: '/academy', icon: BookOpen },
+    { label: 'Progress', path: '/progress', icon: Award },
   ];
 
   return (

@@ -1,0 +1,38 @@
+[
+  {
+    "title": "The Fork",
+    "slug": "the-fork",
+    "category": "TACTICS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 8,
+    "shortDescription": "Discover how a single piece can attack two targets at the same time.",
+    "content": "# The Fork\n\nA **fork** occurs when one piece attacks two or more enemy pieces simultaneously. Since the opponent can only move one piece per turn, at least one of the attacked pieces is usually captured.\n\n[BOARD:r3k2r/pppq1ppp/2np1n2/2b1p1B1/2B1P1b1/2NP1N2/PPP1QPPP/R3K2R]\n\nKnights are the most famous forking pieces because their unique 'L' shape allows them to attack multiple pieces, including the King and Queen, without being captured back.\n\n### Types of Forks\n- **Knight Fork:** High utility due to jumping ability.\n- **Pawn Fork:** Advancing a pawn to attack two adjacent pieces (e.g. Knight and Bishop).\n- **Royal Fork:** Attacking the King and Queen simultaneously.\n\n### Key Takeaways\n- Look for unprotected pieces that align diagonally or in L-shapes.\n- Royal forks win the game most of the time.\n- Every piece, including pawns and Kings, can perform a fork."
+  },
+  {
+    "title": "The Pin",
+    "slug": "the-pin",
+    "category": "TACTICS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 10,
+    "shortDescription": "Learn how to restrict enemy piece movement by pinning them against a higher value piece.",
+    "content": "# The Pin\n\nA **pin** occurs when an attacking piece targets an opponent's piece in a way that prevents it from moving, because moving it would expose a more valuable piece behind it.\n\n[BOARD:r1bqk2r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R]\n\nThere are two main types of pins:\n- **Absolute Pin:** The piece behind is the King. It is illegal for the pinned piece to move, as it would put the King in check.\n- **Relative Pin:** The piece behind is a valuable piece (like a Queen or Rook). The pinned piece can legally move, but doing so would lose the valuable piece.\n\n### Exploiting a Pin\nIf you pin an enemy piece, **attack it again** with a less valuable piece (like a pawn) to win material.\n\n### Key Takeaways\n- Pins paralyze enemy pieces.\n- Only long-range pieces (Queen, Rook, Bishop) can create a pin.\n- Keep pressuring pinned pieces; do not capture them immediately."
+  },
+  {
+    "title": "The Skewer",
+    "slug": "the-skewer",
+    "category": "TACTICS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 9,
+    "shortDescription": "Attack a high-value piece, forcing it to move and expose a target behind it.",
+    "content": "# The Skewer\n\nA **skewer** is often described as a reversed pin. In a skewer, the high-value piece is in front, and the lower-value piece is behind it.\n\n[BOARD:4k3/8/8/8/8/8/8/b3K2R]\n\nWhen you attack the high-value piece (e.g. the King), it is forced to run away, allowing you to capture the lower-value piece (e.g. a Rook) directly behind it on the line of attack.\n\n### Key Takeaways\n- Skewers target the front piece, forcing a getaway.\n- Like pins, only long-range pieces (Queens, Rooks, Bishops) can skewer.\n- Always look for lines containing multiple enemy pieces in a row."
+  },
+  {
+    "title": "Double Attack and Discovered Attack",
+    "slug": "discovered-attack",
+    "category": "TACTICS",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 12,
+    "shortDescription": "Unleash hidden attacks by moving a blocking piece out of the way.",
+    "content": "# Discovered Attacks and Double Attacks\n\nA **discovered attack** happens when one of your pieces moves out of the way, opening up a line of attack for another of your long-range pieces (Rook, Bishop, or Queen) behind it.\n\n[BOARD:rnbqkbnr/ppp2ppp/3p4/4p3/3P4/5N2/PPP1PPPP/RNBQKB1R]\n\nIf the moving piece *also* creates a threat of its own, this is a **double attack**. The opponent is forced to respond to one threat, leaving the other undefended.\n\n### Discovered Check\nIf the opened line attacks the enemy King, it is a discovered check. This is extremely lethal, as the moving piece has total freedom to capture anything on the board since the opponent must get out of check.\n\n### Key Takeaways\n- Discovered attacks are highly surprising.\n- They allow pieces to move to active squares with a double-threat.\n- Look for aligned pieces on files and diagonals."
+  }
+]

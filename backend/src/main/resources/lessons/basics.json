@@ -1,0 +1,38 @@
+[
+  {
+    "title": "The Chessboard and Setup",
+    "slug": "chessboard-setup",
+    "category": "CHESS_BASICS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 8,
+    "shortDescription": "Learn how the chessboard is laid out and how to place the pieces correctly.",
+    "content": "# The Chessboard and Setup\n\nThe game of chess is played on an 8x8 grid of alternating light and dark squares, totaling 64 squares. The columns (called **files**) are labeled **a** through **h**, and the rows (called **ranks**) are numbered **1** through **8**.\n\n[BOARD:rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R]\n\n### The Setup Rules\n- **Bottom Right Square:** Always ensure a light square is on the bottom right corner (the phrase 'white on right' helps you remember this).\n- **Queens on their own color:** The White Queen starts on a light square (d1), and the Black Queen starts on a dark square (d8).\n- **The Layout:** Rooks start in the corners, followed by Knights, then Bishops. The King stands next to the Queen.\n\n### Key Takeaways\n- Board coordinates range from a1 to h8.\n- Ranks are horizontal rows, and files are vertical columns.\n- White Queen goes on d1; Black Queen goes on d8."
+  },
+  {
+    "title": "Piece Movement Basics",
+    "slug": "piece-movement",
+    "category": "CHESS_BASICS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 12,
+    "shortDescription": "Master how each piece moves, captures, and controls the board.",
+    "content": "# How the Chess Pieces Move\n\nEach chess piece has its own unique way of moving across the board:\n- **Rook:** Moves in straight lines horizontally or vertically, as far as it wants, until blocked.\n- **Bishop:** Moves diagonally, staying on the same color square it started on.\n- **Queen:** Combines the power of the Rook and Bishop. It moves diagonally or straight.\n- **Knight:** Moves in an 'L' shape (two squares in one direction and one square sideways) and is the only piece that can jump over others.\n- **Pawn:** Moves forward one square (or two squares on its first move), and captures diagonally.\n- **King:** Moves exactly one square in any direction.\n\n[BOARD:4k3/8/8/4Q3/8/8/8/4K3]\n\n### Capturing\nWhen a piece captures an opponent's piece, it lands on that square and replaces the opponent's piece. Jumping over pieces is only allowed for the Knight.\n\n### Key Takeaways\n- Rooks control lines; Bishops control diagonals.\n- The Queen is the most powerful attacker.\n- Knights jump in L-shapes."
+  },
+  {
+    "title": "Castling Rules and Safety",
+    "slug": "castling-rules",
+    "category": "CHESS_BASICS",
+    "difficulty": "BEGINNER",
+    "estimatedMinutes": 10,
+    "shortDescription": "Discover castling, the only move in chess where two pieces move at once.",
+    "content": "# Castling: King Safety and Rook Activity\n\nCastling is a special move that helps protect your King and activates your Rook. It involves moving the King two squares toward a Rook, and then hopping the Rook over the King to the adjacent square.\n\n[BOARD:rnbqk2r/pppp1ppp/5n2/4p3/1bB1P3/5N2/PPPP1PPP/RNBQK2R]\n\n### Rules for Castling\n1. It must be the King's first move.\n2. It must be the Rook's first move.\n3. All squares between the King and Rook must be vacant.\n4. The King cannot be in check, nor can it pass through or land on a square attacked by an enemy piece.\n\n### Key Takeaways\n- Kingside castling (short) and Queenside castling (long) are both valid.\n- Castling gets the King out of the open center and into a corner shield.\n- Rook is brought closer to the center."
+  },
+  {
+    "title": "En Passant and Promotion",
+    "slug": "special-pawn-rules",
+    "category": "CHESS_BASICS",
+    "difficulty": "INTERMEDIATE",
+    "estimatedMinutes": 15,
+    "shortDescription": "Understand two advanced pawn rules: En Passant captures and promotion.",
+    "content": "# En Passant and Pawn Promotion\n\nPawns have two special exceptions to their normal movement rules:\n\n### 1. En Passant (In Passing)\nIf White has a pawn on the 5th rank (or Black on the 4th rank), and the opponent moves an adjacent pawn two squares forward, the player can capture that pawn as if it had only moved one square. This capture must be made on the very next move.\n\n[BOARD:rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR]\n\n### 2. Pawn Promotion\nWhen a pawn reaches the opposite end of the board (8th rank for White, 1st rank for Black), it immediately promotes into a Queen, Rook, Bishop, or Knight.\n\n### Key Takeaways\n- En Passant is only legal immediately after the opponent's double pawn advance.\n- Promotion is a critical endgame objective."
+  }
+]
