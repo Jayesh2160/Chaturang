@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
@@ -35,22 +38,18 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        if (lessonRepository.count() == 0) {
-            log.info("No lessons found in database. Starting database seeder...");
-            seedLessons();
-        } else {
-            log.info("Database already contains lessons. Skipping seeder.");
-        }
+        log.info("Starting database seeder and update check...");
+        seedOrUpdateLessons();
     }
 
-    private void seedLessons() {
+    private void seedOrUpdateLessons() {
         ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         try {
             Resource[] resources = resolver.getResources("classpath:lessons/*.json");
-            log.info("Found {} lesson JSON files to seed.", resources.length);
+            log.info("Found {} lesson JSON files.", resources.length);
 
             for (Resource resource : resources) {
-                log.info("Seeding lessons from: {}", resource.getFilename());
+                log.info("Processing lessons from: {}", resource.getFilename());
                 try (InputStream inputStream = resource.getInputStream()) {
                     List<LessonSeedDto> seeds = objectMapper.readValue(
                             inputStream,
@@ -58,26 +57,96 @@ public class DatabaseSeeder implements CommandLineRunner {
                     );
 
                     for (LessonSeedDto seed : seeds) {
-                        Lesson lesson = Lesson.builder()
-                                .title(seed.getTitle())
-                                .slug(seed.getSlug())
-                                .category(LessonCategory.valueOf(seed.getCategory()))
-                                .difficulty(Difficulty.valueOf(seed.getDifficulty()))
-                                .estimatedMinutes(seed.getEstimatedMinutes())
-                                .shortDescription(seed.getShortDescription())
-                                .content(seed.getContent())
-                                .build();
+                        validateFens(seed.getContent(), seed.getTitle());
 
-                        lessonRepository.save(lesson);
+                        Optional<Lesson> existingOpt = lessonRepository.findBySlug(seed.getSlug());
+                        if (existingOpt.isPresent()) {
+                            Lesson existing = existingOpt.get();
+                            boolean updated = false;
+
+                            if (!existing.getTitle().equals(seed.getTitle())) {
+                                existing.setTitle(seed.getTitle());
+                                updated = true;
+                            }
+                            if (!existing.getContent().equals(seed.getContent())) {
+                                existing.setContent(seed.getContent());
+                                updated = true;
+                            }
+                            if (!existing.getShortDescription().equals(seed.getShortDescription())) {
+                                existing.setShortDescription(seed.getShortDescription());
+                                updated = true;
+                            }
+                            if (!existing.getEstimatedMinutes().equals(seed.getEstimatedMinutes())) {
+                                existing.setEstimatedMinutes(seed.getEstimatedMinutes());
+                                updated = true;
+                            }
+                            if (updated) {
+                                log.info("Updating existing lesson in database: {}", seed.getSlug());
+                                lessonRepository.save(existing);
+                            }
+                        } else {
+                            log.info("Seeding new lesson: {}", seed.getSlug());
+                            Lesson lesson = Lesson.builder()
+                                    .title(seed.getTitle())
+                                    .slug(seed.getSlug())
+                                    .category(LessonCategory.valueOf(seed.getCategory()))
+                                    .difficulty(Difficulty.valueOf(seed.getDifficulty()))
+                                    .estimatedMinutes(seed.getEstimatedMinutes())
+                                    .shortDescription(seed.getShortDescription())
+                                    .content(seed.getContent())
+                                    .build();
+                            lessonRepository.save(lesson);
+                        }
                     }
                 } catch (IOException e) {
                     log.error("Failed to seed lessons from file: " + resource.getFilename(), e);
                 }
             }
-            log.info("Database seeding completed successfully!");
+            log.info("Database seeding/update check completed successfully!");
         } catch (IOException e) {
             log.error("Failed to find lesson resources", e);
         }
+    }
+
+    private void validateFens(String content, String title) {
+        if (content == null) return;
+        Pattern pattern = Pattern.compile("\\[BOARD:([^\\]]+)\\]");
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            String fen = matcher.group(1).trim();
+            if (!isBasicFenValid(fen)) {
+                log.warn("Invalid FEN detected in lesson: \"{}\"", title);
+            }
+        }
+    }
+
+    private boolean isBasicFenValid(String fen) {
+        if ("start".equals(fen)) return true;
+
+        String[] fields = fen.split("\\s+");
+        String placement = fields[0];
+        String[] ranks = placement.split("/");
+        if (ranks.length != 8) {
+            return false;
+        }
+
+        for (String rank : ranks) {
+            int sum = 0;
+            for (int i = 0; i < rank.length(); i++) {
+                char c = rank.charAt(i);
+                if (Character.isDigit(c)) {
+                    sum += Character.getNumericValue(c);
+                } else if (String.valueOf(c).matches("[prnbqkPRNBQK]")) {
+                    sum += 1;
+                } else {
+                    return false;
+                }
+            }
+            if (sum != 8) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // Inner DTO helper for parsing JSON

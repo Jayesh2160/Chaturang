@@ -1,4 +1,5 @@
 import api from './api';
+import { validateLessonFens } from '../utils/fenValidation';
 
 export interface LessonResponse {
   id: number;
@@ -29,17 +30,40 @@ export const lessonService = {
     const response = await api.get<LessonResponse[]>('/api/lessons', {
       params: search ? { search } : undefined,
     });
-    return response.data;
+    const lessons = response.data;
+    if (lessons) {
+      lessons.forEach(lesson => {
+        validateLessonFens(lesson.content, lesson.title);
+      });
+    }
+    return lessons;
   },
 
   getLesson: async (slug: string): Promise<LessonResponse> => {
     const response = await api.get<LessonResponse>(`/api/lessons/${slug}`);
-    return response.data;
+    const lesson = response.data;
+    if (lesson) {
+      validateLessonFens(lesson.content, lesson.title);
+    }
+    return lesson;
   },
 
   getProgress: async (): Promise<ProgressResponse> => {
     const response = await api.get<ProgressResponse>('/api/progress');
-    return response.data;
+    const progress = response.data;
+    if (progress) {
+      if (progress.completedLessons) {
+        progress.completedLessons.forEach(lesson => {
+          validateLessonFens(lesson.content, lesson.title);
+        });
+      }
+      if (progress.remainingLessons) {
+        progress.remainingLessons.forEach(lesson => {
+          validateLessonFens(lesson.content, lesson.title);
+        });
+      }
+    }
+    return progress;
   },
 
   completeLesson: async (slug: string): Promise<void> => {

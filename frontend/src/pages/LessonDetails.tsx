@@ -7,23 +7,8 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { lessonService } from '../services/lessonService';
 import type { LessonResponse } from '../services/lessonService';
-import { ArrowLeft, Clock, Award, CheckCircle, RotateCcw, Play, ChevronRight } from 'lucide-react';
-
-// Helper to pad incomplete FENs to 6 space-delimited fields for chess.js strict validation
-const cleanFenForChessJs = (fen: string): string => {
-  if (!fen) return '';
-  const trimmed = fen.trim();
-  if (trimmed === 'start') return '';
-  
-  const fields = trimmed.split(/\s+/);
-  if (fields.length < 6) {
-    const defaults = ['w', '-', '-', '0', '1'];
-    const missingCount = 6 - fields.length;
-    const padding = defaults.slice(defaults.length - missingCount).join(' ');
-    return `${trimmed} ${padding}`;
-  }
-  return trimmed;
-};
+import { ArrowLeft, Clock, Award, CheckCircle, RotateCcw, Play, ChevronRight, AlertTriangle } from 'lucide-react';
+import { isValidFen, cleanFenForChessJs } from '../utils/fenValidation';
 
 // ==========================================
 // 1. LESSON HEADER COMPONENT
@@ -90,9 +75,27 @@ const LessonHeader: React.FC<LessonHeaderProps> = ({ lesson, onBack }) => {
 // ==========================================
 interface ChessBoardRendererProps {
   fen: string;
+  lessonTitle: string;
 }
 
-const ChessBoardRenderer: React.FC<ChessBoardRendererProps> = ({ fen }) => {
+const ChessBoardRenderer: React.FC<ChessBoardRendererProps> = ({ fen, lessonTitle }) => {
+  const isValid = isValidFen(fen);
+
+  if (!isValid) {
+    console.error(`Invalid FEN detected in lesson: "${lessonTitle}"`);
+    return (
+      <div className="my-8 flex justify-center">
+        <div className="w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-2xl flex flex-col items-center justify-center border border-amber-500/20 bg-amber-500/[0.02] shadow-xl p-6 text-center">
+          <AlertTriangle className="w-8 h-8 text-amber-500 mb-3 animate-pulse" strokeWidth={1.5} />
+          <h4 className="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-1">Board Unavailable</h4>
+          <p className="text-xs text-zinc-400 font-light leading-relaxed">
+            The board configuration for this lesson section contains invalid coordinates.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="my-8 flex justify-center">
       <div className="w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-zinc-950 p-2">
@@ -113,9 +116,10 @@ const ChessBoardRenderer: React.FC<ChessBoardRendererProps> = ({ fen }) => {
 // ==========================================
 interface LessonContentProps {
   content: string;
+  lessonTitle: string;
 }
 
-const LessonContent: React.FC<LessonContentProps> = ({ content }) => {
+const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) => {
   // Simple bold text parser (**text**)
   const parseBold = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -184,7 +188,7 @@ const LessonContent: React.FC<LessonContentProps> = ({ content }) => {
       {parts.map((part, index) => {
         if (part.startsWith('[BOARD:') && part.endsWith(']')) {
           const fen = part.slice(7, -1);
-          return <ChessBoardRenderer key={index} fen={fen} />;
+          return <ChessBoardRenderer key={index} fen={fen} lessonTitle={lessonTitle} />;
         } else {
           return <React.Fragment key={index}>{renderTextSegment(part)}</React.Fragment>;
         }
@@ -246,27 +250,51 @@ interface LessonFooterProps {
   onComplete: () => Promise<void>;
   nextLesson: LessonResponse | null;
   practiceFen: string;
+  lessonTitle: string;
 }
 
 const LessonFooter: React.FC<LessonFooterProps> = ({
   isCompleted,
   onComplete,
   nextLesson,
-  practiceFen
+  practiceFen,
+  lessonTitle
 }) => {
   const navigate = useNavigate();
-  const [game, setGame] = useState(() => new Chess(practiceFen === 'start' ? undefined : cleanFenForChessJs(practiceFen)));
-  const [boardFen, setBoardFen] = useState(practiceFen === 'start' ? game.fen() : practiceFen);
+  const isPracticeFenValid = isValidFen(practiceFen);
+
+  const [game, setGame] = useState(() => {
+    try {
+      if (isPracticeFenValid) {
+        return new Chess(practiceFen === 'start' ? undefined : cleanFenForChessJs(practiceFen));
+      }
+    } catch (e) {
+      console.error(`Invalid FEN detected in lesson: "${lessonTitle}"`);
+    }
+    return new Chess(); // Default starting position as safe fallback
+  });
+
+  const [boardFen, setBoardFen] = useState(() => game.fen());
   const [moveStatus, setMoveStatus] = useState<string>('Interact with the position below to analyze moves.');
   const [isMarking, setIsMarking] = useState(false);
 
   // Sync practice game if FEN changes
   useEffect(() => {
-    const g = new Chess(practiceFen === 'start' ? undefined : cleanFenForChessJs(practiceFen));
+    try {
+      if (isPracticeFenValid) {
+        const g = new Chess(practiceFen === 'start' ? undefined : cleanFenForChessJs(practiceFen));
+        setGame(g);
+        setBoardFen(g.fen());
+        setMoveStatus('Interact with the position below to analyze moves.');
+        return;
+      }
+    } catch (e) {
+      // already logged or safe fallback
+    }
+    const g = new Chess();
     setGame(g);
     setBoardFen(g.fen());
-    setMoveStatus('Interact with the position below to analyze moves.');
-  }, [practiceFen]);
+  }, [practiceFen, isPracticeFenValid]);
 
   const handleMove = (sourceSquare: string, targetSquare: string) => {
     try {
@@ -297,10 +325,17 @@ const LessonFooter: React.FC<LessonFooterProps> = ({
   };
 
   const handleReset = () => {
-    const g = new Chess(practiceFen === 'start' ? undefined : practiceFen);
-    setGame(g);
-    setBoardFen(g.fen());
-    setMoveStatus('Board coordinates reset.');
+    try {
+      const g = new Chess(practiceFen === 'start' ? undefined : cleanFenForChessJs(practiceFen));
+      setGame(g);
+      setBoardFen(g.fen());
+      setMoveStatus('Board coordinates reset.');
+    } catch (e) {
+      const g = new Chess();
+      setGame(g);
+      setBoardFen(g.fen());
+      setMoveStatus('Board coordinates reset.');
+    }
   };
 
   const handleCompleteClick = async () => {
@@ -323,43 +358,53 @@ const LessonFooter: React.FC<LessonFooterProps> = ({
             <Play className="w-4 h-4 text-brand-accent" strokeWidth={1.5} />
             Practice Position
           </h3>
-          <p className="text-xs text-zinc-500 font-light">
+          <p className="text-xs text-zinc-550 font-light">
             Toggle and test various piece movements freely to audit this specific board layout.
           </p>
         </div>
 
-        <Card className="flex flex-col items-center justify-center p-6 bg-zinc-950/20 border-white/5 max-w-md mx-auto rounded-2xl shadow-lg">
-          <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-4 bg-zinc-950 p-1.5">
-            <Chessboard 
-              options={{
-                position: boardFen,
-                onPieceDrop: ({ sourceSquare, targetSquare }) => {
-                  if (targetSquare) {
-                    return handleMove(sourceSquare, targetSquare);
-                  }
-                  return false;
-                },
-                darkSquareStyle: { backgroundColor: '#2e2e33' },
-                lightSquareStyle: { backgroundColor: '#e4e4e7' }
-              }}
-            />
-          </div>
+        {!isPracticeFenValid ? (
+          <Card className="flex flex-col items-center justify-center p-8 bg-amber-500/[0.02] border-amber-500/20 max-w-md mx-auto rounded-2xl shadow-lg text-center">
+            <AlertTriangle className="w-8 h-8 text-amber-500 mb-3 animate-pulse" strokeWidth={1.5} />
+            <h4 className="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-1">Practice Board Unavailable</h4>
+            <p className="text-xs text-zinc-400 font-light leading-relaxed">
+              The practice configuration for this lesson contains invalid coordinates.
+            </p>
+          </Card>
+        ) : (
+          <Card className="flex flex-col items-center justify-center p-6 bg-zinc-950/20 border-white/5 max-w-md mx-auto rounded-2xl shadow-lg">
+            <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-4 bg-zinc-950 p-1.5">
+              <Chessboard 
+                options={{
+                  position: boardFen,
+                  onPieceDrop: ({ sourceSquare, targetSquare }) => {
+                    if (targetSquare) {
+                      return handleMove(sourceSquare, targetSquare);
+                    }
+                    return false;
+                  },
+                  darkSquareStyle: { backgroundColor: '#2e2e33' },
+                  lightSquareStyle: { backgroundColor: '#e4e4e7' }
+                }}
+              />
+            </div>
 
-          <div className="flex items-center justify-between w-full border-t border-white/5 pt-4 mt-2">
-            <span className="text-xs font-semibold text-zinc-400 max-w-[65%] text-left truncate">
-              {moveStatus}
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleReset}
-              className="flex items-center gap-1 text-[10px] py-1 px-2.5 h-8 font-bold uppercase tracking-wider"
-            >
-              <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
-              Reset
-            </Button>
-          </div>
-        </Card>
+            <div className="flex items-center justify-between w-full border-t border-white/5 pt-4 mt-2">
+              <span className="text-xs font-semibold text-zinc-450 max-w-[65%] text-left truncate">
+                {moveStatus}
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleReset}
+                className="flex items-center gap-1 text-[10px] py-1 px-2.5 h-8 font-bold uppercase tracking-wider"
+              >
+                <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Reset
+              </Button>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Action Buttons: Complete Lesson / Next Lesson */}
@@ -387,7 +432,7 @@ const LessonFooter: React.FC<LessonFooterProps> = ({
             className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 hover:bg-white/5 border-white/10"
           >
             <div className="text-right hidden sm:block">
-              <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-widest block">Next Up</span>
+              <span className="text-[8px] text-zinc-550 uppercase font-bold tracking-widest block">Next Up</span>
               <span className="text-xs text-zinc-350 font-bold block">{nextLesson.title}</span>
             </div>
             <ChevronRight className="w-4 h-4 text-brand-accent" strokeWidth={1.5} />
@@ -497,7 +542,7 @@ export const LessonDetails: React.FC = () => {
         />
         
         {/* Core Content */}
-        <LessonContent content={lesson.content} />
+        <LessonContent content={lesson.content} lessonTitle={lesson.title} />
         
         {/* Key Takeaways */}
         <KeyTakeaways content={lesson.content} />
@@ -508,6 +553,7 @@ export const LessonDetails: React.FC = () => {
           onComplete={handleComplete}
           nextLesson={nextLesson}
           practiceFen={practiceFen}
+          lessonTitle={lesson.title}
         />
       </div>
     </Layout>
