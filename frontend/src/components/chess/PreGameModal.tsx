@@ -24,6 +24,25 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
   const [userColor, setUserColor] = useState<'white' | 'black' | 'random'>(currentOptions.userColor);
   const [themeId, setThemeId] = useState<string>(currentOptions.themeId);
   const [autoFlip] = useState<boolean>(currentOptions.autoFlip);
+  const [gameMode, setGameMode] = useState<'SELF' | 'COMPUTER'>(currentOptions.gameMode === 'COMPUTER' ? 'COMPUTER' : 'SELF');
+  const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>(currentOptions.difficulty || 'MEDIUM');
+
+  const getDifficultyRating = (diff: string) => {
+    switch (diff) {
+      case 'EASY': return 600;
+      case 'MEDIUM': return 1200;
+      case 'HARD': return 1800;
+      default: return 1200;
+    }
+  };
+  const getDifficultyName = (diff: string) => {
+    switch (diff) {
+      case 'EASY': return 'Stockfish (600)';
+      case 'MEDIUM': return 'Stockfish (1200)';
+      case 'HARD': return 'Stockfish (1800)';
+      default: return 'Stockfish (1200)';
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +55,10 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
       userColor,
       themeId,
       autoFlip,
+      gameMode,
+      difficulty,
+      opponentName: gameMode === 'COMPUTER' ? getDifficultyName(difficulty) : 'Grandmaster Bot',
+      opponentRating: gameMode === 'COMPUTER' ? getDifficultyRating(difficulty) : 2100,
     });
     onClose();
   };
@@ -54,6 +77,61 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Game Mode Selection */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
+              Game Mode
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'SELF', label: '👥 Local Play' },
+                { id: 'COMPUTER', label: '🤖 vs Stockfish' },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setGameMode(m.id as any)}
+                  className={`py-2 px-3 rounded-xl border text-xs font-semibold text-center transition-colors ${
+                    gameMode === m.id
+                      ? 'bg-purple-600 text-white border-purple-400 shadow-md'
+                      : 'bg-zinc-900 border-white/5 text-zinc-400 hover:bg-zinc-800'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Difficulty Selection (Only if gameMode is COMPUTER) */}
+          {gameMode === 'COMPUTER' && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
+                Engine Difficulty
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'EASY', label: '600 ELO' },
+                  { id: 'MEDIUM', label: '1200 ELO' },
+                  { id: 'HARD', label: '1800 ELO' },
+                ].map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setDifficulty(d.id as any)}
+                    className={`py-2 px-3 rounded-xl border text-[10px] font-semibold text-center transition-colors ${
+                      difficulty === d.id
+                        ? 'bg-purple-500/20 border-purple-500/50 text-white font-bold'
+                        : 'bg-zinc-900 border-white/5 text-zinc-400 hover:bg-zinc-800'
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Time Control */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
@@ -72,7 +150,7 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
                   }`}
                 >
                   <div>{p.name}</div>
-                  <div className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                  <div className="text-[10px] text-zinc-550 font-mono mt-0.5">
                     {p.baseMinutes} min + {p.incrementSeconds}s
                   </div>
                 </button>
