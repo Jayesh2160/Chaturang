@@ -397,16 +397,24 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [engine.fen, engine.history, clock.whiteTime, clock.blackTime, engine.turn, gameSetupOptions, saveGameState]);
 
+  // Maintain a stable ref of handleMakeMove to prevent useEffect from re-triggering and clearing the timer on every render
+  const handleMakeMoveRef = React.useRef(handleMakeMove);
+  useEffect(() => {
+    handleMakeMoveRef.current = handleMakeMove;
+  }, [handleMakeMove]);
+
   // Trigger evaluation on every move when gameMode is COMPUTER
   useEffect(() => {
     if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || timeoutResult) return;
 
     const getEval = async () => {
       try {
+        console.log(`[Engine State] Requesting evaluation for FEN: ${engine.fen}`);
         const res = await engineService.evaluate({ fen: engine.fen });
+        console.log(`[Engine State] Evaluation result received:`, res);
         setEvaluation(res.evaluation);
       } catch (err) {
-        // Suppress eval errors
+        console.error(`[Engine State] Evaluation request failed:`, err);
       }
     };
     getEval();
@@ -421,13 +429,16 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     if (currentTurn === computerColor) {
       const makeComputerMove = async () => {
+        console.log(`[Thinking State] Setting isComputerThinking = true. Computer Color: ${computerColor}`);
         setIsComputerThinking(true);
         const startTime = Date.now();
         try {
+          console.log(`[Engine State] Requesting best move from Stockfish for FEN: ${engine.fen} (Difficulty: ${gameSetupOptions.difficulty || 'MEDIUM'})`);
           const res = await engineService.getBestMove({
             fen: engine.fen,
             difficulty: gameSetupOptions.difficulty || 'MEDIUM',
           });
+          console.log(`[Engine State] Stockfish returned bestmove: ${res.bestMove}`);
 
           const bestMove = res.bestMove;
           const moveFrom = bestMove.slice(0, 2) as Square;
@@ -439,12 +450,13 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const delay = Math.max(800 - elapsedTime, 0);
 
           setTimeout(() => {
-            // Execute computer move
-            handleMakeMove(moveFrom, moveTo, movePromotion, true);
+            console.log(`[Applied Move] Executing computer move: ${moveFrom} -> ${moveTo} (Promotion: ${movePromotion})`);
+            handleMakeMoveRef.current(moveFrom, moveTo, movePromotion, true);
+            console.log(`[Thinking State] Setting isComputerThinking = false`);
             setIsComputerThinking(false);
           }, delay);
         } catch (err) {
-          console.error('Computer move calculation failed:', err);
+          console.error('[Engine State] Computer move calculation failed:', err);
           setIsComputerThinking(false);
         }
       };
@@ -462,7 +474,6 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     engine.isGameOver,
     timeoutResult,
     isComputerThinking,
-    handleMakeMove,
   ]);
 
   const value: ChessGameContextType = {
