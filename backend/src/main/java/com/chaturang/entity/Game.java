@@ -40,6 +40,14 @@ public class Game {
     @Column(columnDefinition = "TEXT")
     private String fen; // Final FEN position of the board
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "game_mode")
+    private GameMode gameMode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "difficulty")
+    private EngineDifficulty difficulty;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -5,14 +5,36 @@ import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { gameService } from '../services/gameService';
-import { useNavigate } from 'react-router-dom';
+import { engineService } from '../services/engineService';
+
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RotateCcw, Save, ShieldAlert, Award, ArrowLeftRight, User } from 'lucide-react';
+
+
 
 export const PlayGame: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const gameMode = (searchParams.get('gameMode') || 'SELF').toUpperCase() as 'SELF' | 'COMPUTER' | 'ONLINE' | 'ANALYSIS';
+  const difficulty = (searchParams.get('difficulty') || 'MEDIUM').toUpperCase();
+  const playerColor = (searchParams.get('color') || 'white') as 'white' | 'black';
+  const initialMode = (searchParams.get('timeControl') || 'rapid') as 'classic' | 'blitz' | 'rapid' | 'bullet';
+
+  const getInitialSeconds = (mode: string) => {
+    switch (mode) {
+      case 'classic': return 240 * 60; // 4 hours
+      case 'blitz': return 3 * 60;
+      case 'bullet': return 1 * 60;
+      case 'rapid':
+      default:
+        return 10 * 60;
+    }
+  };
+
   const [game, setGame] = useState(() => new Chess());
   const [gameFen, setGameFen] = useState(game.fen());
-  const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
+  const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>(playerColor);
+  const [squareStyles, setSquareStyles] = useState<Record<string, React.CSSProperties>>({});
   
   // Game state flags
   const [isCheck, setIsCheck] = useState(false);
@@ -20,13 +42,37 @@ export const PlayGame: React.FC = () => {
   const [isDraw, setIsDraw] = useState(false);
   const [isStalemate, setIsStalemate] = useState(false);
   const [turn, setTurn] = useState<'w' | 'b'>('w');
+
+  // Computer states
+  const [isComputerThinking, setIsComputerThinking] = useState(false);
+  const [evaluation, setEvaluation] = useState('0.00');
+
+  // Timers/clocks
+  const [whiteTime, setWhiteTime] = useState(() => getInitialSeconds(initialMode));
+  const [blackTime, setBlackTime] = useState(() => getInitialSeconds(initialMode));
+  const [timeoutWinner, setTimeoutWinner] = useState<'w' | 'b' | null>(null);
   
   // Save modal states
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [opponentName, setOpponentName] = useState('Computer');
+  const getDifficultyElo = (diff: string) => {
+    switch (diff) {
+      case 'EASY': return '600';
+      case 'MEDIUM': return '1200';
+      case 'HARD': return '1800';
+      default: return '1200';
+    }
+  };
+  const [opponentName, setOpponentName] = useState(() => {
+    if (gameMode === 'COMPUTER') {
+      return `Stockfish (${getDifficultyElo(difficulty)})`;
+    }
+    return 'Computer';
+  });
   const [customResult, setCustomResult] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+
 
   // Update flags on FEN changes
   useEffect(() => {
@@ -36,6 +82,108 @@ export const PlayGame: React.FC = () => {
     setIsStalemate(game.isStalemate());
     setTurn(game.turn());
   }, [gameFen]);
+
+  // Position evaluation trigger
+  useEffect(() => {
+    if (game.isGameOver() || timeoutWinner) return;
+    
+    const getEval = async () => {
+      try {
+        const res = await engineService.evaluate({ fen: gameFen });
+        setEvaluation(res.evaluation);
+      } catch (err) {
+        // Suppress eval errors silently
+      }
+    };
+    getEval();
+  }, [gameFen, timeoutWinner]);
+
+  // Game loop ticking clock effect
+  useEffect(() => {
+    if (game.isGameOver() || timeoutWinner) return;
+
+    const interval = setInterval(() => {
+      if (turn === 'w') {
+        setWhiteTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setTimeoutWinner('b');
+            return 0;
+          }
+          return prev - 1;
+        });
+      } else {
+        setBlackTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setTimeoutWinner('w');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [turn, gameFen, timeoutWinner]);
+
+  // Computer Move Effect
+  useEffect(() => {
+    if (gameMode !== 'COMPUTER' || game.isGameOver() || timeoutWinner || isComputerThinking) return;
+
+    const currentTurn = game.turn();
+    const userTurn = playerColor === 'white' ? 'w' : 'b';
+
+    if (currentTurn !== userTurn) {
+      const makeComputerMove = async () => {
+        setIsComputerThinking(true);
+        const startTime = Date.now();
+        try {
+          const res = await engineService.getBestMove({
+            fen: gameFen,
+            difficulty: difficulty as any
+          });
+
+          const bestMove = res.bestMove;
+          const moveFrom = bestMove.slice(0, 2);
+          const moveTo = bestMove.slice(2, 4);
+          const movePromotion = bestMove.length > 4 ? bestMove.charAt(4) : undefined;
+
+          // Natural thinking delay (at least 800ms)
+          const elapsedTime = Date.now() - startTime;
+          const delay = Math.max(800 - elapsedTime, 0);
+
+          setTimeout(() => {
+            // Highlight squares
+            setSquareStyles({
+              [moveFrom]: { backgroundColor: 'rgba(139, 92, 246, 0.4)' },
+              [moveTo]: { backgroundColor: 'rgba(139, 92, 246, 0.4)' }
+            });
+
+            // Execute move
+            makeAMove({
+              from: moveFrom,
+              to: moveTo,
+              promotion: movePromotion
+            });
+            setIsComputerThinking(false);
+
+            // Clear highlights after animation finishes
+            setTimeout(() => {
+              setSquareStyles({});
+            }, 600);
+          }, delay);
+        } catch (err) {
+          console.error('Computer move calculation failed:', err);
+          setIsComputerThinking(false);
+        }
+      };
+
+      makeComputerMove();
+    }
+  }, [gameFen, gameMode, playerColor, difficulty, timeoutWinner]);
+
+
 
   // Execute a move
   const makeAMove = (move: any) => {
@@ -50,7 +198,19 @@ export const PlayGame: React.FC = () => {
 
   // Drag and drop handler
   const onDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
+    if (isComputerThinking) return false;
     if (!targetSquare) return false;
+
+    // In computer mode, ensure user only moves their own piece color
+    if (gameMode === 'COMPUTER') {
+      if (timeoutWinner) return false;
+      const piece = game.get(sourceSquare as any);
+      if (!piece) return false;
+      const expectedColor = playerColor === 'white' ? 'w' : 'b';
+      if (piece.color !== expectedColor) return false;
+    }
+
+
     const move = makeAMove({
       from: sourceSquare,
       to: targetSquare,
@@ -62,14 +222,33 @@ export const PlayGame: React.FC = () => {
     return true;
   };
 
+
   // Reset board
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset the current game? All current moves will be lost.')) {
       const newGame = new Chess();
       setGame(newGame);
       setGameFen(newGame.fen());
+      setIsComputerThinking(false);
+      setSquareStyles({});
+      setEvaluation('0.00');
+      setWhiteTime(getInitialSeconds(initialMode));
+      setBlackTime(getInitialSeconds(initialMode));
+      setTimeoutWinner(null);
     }
   };
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    if (h > 0) {
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    return `${pad(m)}:${pad(s)}`;
+  };
+
 
   // Toggle board orientation
   const handleToggleOrientation = () => {
@@ -78,6 +257,9 @@ export const PlayGame: React.FC = () => {
 
   // Determine game result automatically
   const getAutoResult = () => {
+    if (timeoutWinner) {
+      return timeoutWinner === 'w' ? 'WHITE_WIN' : 'BLACK_WIN';
+    }
     if (isCheckmate) {
       return turn === 'w' ? 'BLACK_WIN' : 'WHITE_WIN';
     }
@@ -86,6 +268,7 @@ export const PlayGame: React.FC = () => {
     }
     return 'IN_PROGRESS';
   };
+
 
   // Open save modal
   const handleOpenSaveModal = () => {
@@ -117,7 +300,10 @@ export const PlayGame: React.FC = () => {
         moveCount: moveCount,
         pgn: game.pgn(),
         fen: game.fen(),
+        gameMode: gameMode,
+        difficulty: gameMode === 'COMPUTER' ? difficulty : undefined
       });
+
 
       setIsSaveModalOpen(false);
       navigate('/my-games');
@@ -182,11 +368,14 @@ export const PlayGame: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-left">
           <div className="space-y-1">
             <h1 className="text-3xl font-extrabold font-display text-white tracking-tight">
-              Interactive Board
+              {gameMode === 'COMPUTER' ? 'Play vs Computer' : 'Interactive Board'}
             </h1>
             <p className="text-zinc-400 text-xs font-light">
-              Practice coordinate systems, validate game rules, and record matches to profile logs.
+              {gameMode === 'COMPUTER'
+                ? `Challenging Stockfish engine in ${initialMode.charAt(0).toUpperCase() + initialMode.slice(1)} mode (${difficulty === 'EASY' ? '600' : difficulty === 'MEDIUM' ? '1200' : '1800'} ELO). Good luck!`
+                 : 'Practice coordinate systems, validate game rules, and record matches to profile logs.'}
             </p>
+
           </div>
         </div>
 
@@ -199,10 +388,36 @@ export const PlayGame: React.FC = () => {
             {/* Player tags - Minimalist */}
             <div className="w-full max-w-[500px] flex justify-between items-center bg-zinc-950/40 border border-white/5 px-4 py-2 rounded-xl text-xs">
               <span className="flex items-center gap-2 text-zinc-400 font-medium">
-                <User className="w-3.5 h-3.5 text-zinc-500" strokeWidth={1.5} />
-                {boardOrientation === 'white' ? 'Opponent (Black)' : 'You (Black)'}
+                {isComputerThinking ? (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
+                  </span>
+                ) : (
+                  <User className="w-3.5 h-3.5 text-zinc-500" strokeWidth={1.5} />
+                )}
+                {gameMode === 'COMPUTER'
+                  ? (boardOrientation === 'white' ? `Stockfish (${difficulty === 'EASY' ? '600' : difficulty === 'MEDIUM' ? '1200' : '1800'})` : 'You')
+                  : (boardOrientation === 'white' ? 'Opponent (Black)' : 'You (Black)')}
               </span>
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">1600 ELO</span>
+              <div className="flex items-center gap-3">
+                <span className={`font-mono font-bold text-sm px-2 py-0.5 rounded border transition-all ${
+                  boardOrientation === 'white' 
+                    ? (turn === 'b' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-zinc-900 border-white/5 text-zinc-400')
+                    : (turn === 'w' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-zinc-900 border-white/5 text-zinc-400')
+                } ${
+                  (boardOrientation === 'white' ? blackTime : whiteTime) < 30 ? 'animate-pulse text-red-500 border-red-500/30' : ''
+                }`}>
+                  {formatTime(boardOrientation === 'white' ? blackTime : whiteTime)}
+                </span>
+                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                  {gameMode === 'COMPUTER'
+                    ? (boardOrientation === 'white'
+                      ? (difficulty === 'EASY' ? '600 ELO' : difficulty === 'MEDIUM' ? '1200 ELO' : '1800 ELO')
+                      : 'Active')
+                    : '1600 ELO'}
+                </span>
+              </div>
             </div>
 
             {/* Board Container */}
@@ -212,8 +427,10 @@ export const PlayGame: React.FC = () => {
                   position: gameFen,
                   onPieceDrop: onDrop,
                   boardOrientation: boardOrientation,
+                  allowDragging: !isComputerThinking && !game.isGameOver() && !timeoutWinner,
                   darkSquareStyle: { backgroundColor: '#2e2e33' },
                   lightSquareStyle: { backgroundColor: '#e4e4e7' },
+                  squareStyles: squareStyles,
                 }}
               />
             </div>
@@ -222,33 +439,79 @@ export const PlayGame: React.FC = () => {
             <div className="w-full max-w-[500px] flex justify-between items-center bg-zinc-950/40 border border-white/5 px-4 py-2 rounded-xl text-xs">
               <span className="flex items-center gap-2 text-zinc-400 font-medium">
                 <User className="w-3.5 h-3.5 text-zinc-300" strokeWidth={1.5} />
-                {boardOrientation === 'white' ? 'You (White)' : 'Opponent (White)'}
+                {gameMode === 'COMPUTER'
+                  ? (boardOrientation === 'white' ? 'You' : `Stockfish (${difficulty === 'EASY' ? '600' : difficulty === 'MEDIUM' ? '1200' : '1800'})`)
+                  : (boardOrientation === 'white' ? 'You (White)' : 'Opponent (White)')}
               </span>
-              <span className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">Active</span>
+              <div className="flex items-center gap-3">
+                <span className={`font-mono font-bold text-sm px-2 py-0.5 rounded border transition-all ${
+                  boardOrientation === 'white' 
+                    ? (turn === 'w' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-zinc-900 border-white/5 text-zinc-400')
+                    : (turn === 'b' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-zinc-900 border-white/5 text-zinc-400')
+                } ${
+                  (boardOrientation === 'white' ? whiteTime : blackTime) < 30 ? 'animate-pulse text-red-500 border-red-500/30' : ''
+                }`}>
+                  {formatTime(boardOrientation === 'white' ? whiteTime : blackTime)}
+                </span>
+                <span className="text-[10px] text-brand-accent font-bold uppercase tracking-widest">
+                  {gameMode === 'COMPUTER'
+                    ? (boardOrientation === 'white'
+                      ? 'Active'
+                      : (difficulty === 'EASY' ? '600 ELO' : difficulty === 'MEDIUM' ? '1200 ELO' : '1800 ELO'))
+                    : 'Active'}
+                </span>
+              </div>
             </div>
 
             {/* Status alerts */}
-            <div className="w-full max-w-[500px] space-y-2">
-              {isCheck && !isCheckmate && (
-                <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/10 text-amber-500 text-xs px-4 py-3 rounded-xl font-medium text-left">
+            <div className="w-full max-w-[500px] space-y-2 text-left">
+              {isComputerThinking && (
+                <div className="flex items-center gap-2 bg-violet-500/5 border border-violet-500/10 text-violet-400 text-xs px-4 py-3 rounded-xl font-medium animate-pulse">
+                  <span className="text-sm">♟️</span>
+                  <span>Stockfish ({difficulty === 'EASY' ? '600' : difficulty === 'MEDIUM' ? '1200' : '1800'}) Thinking</span>
+                  <span className="flex gap-1 items-center ml-1">
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </span>
+                </div>
+              )}
+              {gameMode === 'COMPUTER' && !isComputerThinking && !game.isGameOver() && !timeoutWinner && (
+                <div className="flex items-center justify-between bg-zinc-950/20 border border-white/5 text-zinc-400 text-xs px-4 py-2.5 rounded-xl font-medium">
+                  <span>Engine Evaluation:</span>
+                  <span className={`font-mono font-bold ${
+                    evaluation.startsWith('+') ? 'text-emerald-450' : evaluation.startsWith('-') ? 'text-red-450' : 'text-zinc-300'
+                  }`}>
+                    {evaluation}
+                  </span>
+                </div>
+              )}
+              {timeoutWinner && (
+                <div className="flex items-center gap-2 bg-red-500/5 border border-red-500/10 text-red-450 text-xs px-4 py-3 rounded-xl font-medium">
+                  <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                  <span>Game Over. {timeoutWinner === 'w' ? 'White' : 'Black'} lost on time.</span>
+                </div>
+              )}
+              {isCheck && !isCheckmate && !timeoutWinner && (
+                <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/10 text-amber-500 text-xs px-4 py-3 rounded-xl font-medium">
                   <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                   <span>Check! {turn === 'w' ? 'White' : 'Black'} king is under attack.</span>
                 </div>
               )}
-              {isCheckmate && (
-                <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-xs px-4 py-3 rounded-xl font-medium text-left">
+              {isCheckmate && !timeoutWinner && (
+                <div className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 text-xs px-4 py-3 rounded-xl font-medium">
                   <Award className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                   <span>Checkmate. {turn === 'w' ? 'Black' : 'White'} wins the match.</span>
                 </div>
               )}
-              {isDraw && (
-                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-4 py-3 rounded-xl font-medium text-left">
+              {isDraw && !timeoutWinner && (
+                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-4 py-3 rounded-xl font-medium">
                   <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                   <span>Draw. The match ended in a tie.</span>
                 </div>
               )}
-              {isStalemate && (
-                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-4 py-3 rounded-xl font-medium text-left">
+              {isStalemate && !timeoutWinner && (
+                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-4 py-3 rounded-xl font-medium">
                   <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                   <span>Stalemate. No legal moves remaining.</span>
                 </div>
@@ -275,6 +538,7 @@ export const PlayGame: React.FC = () => {
               <Button 
                 variant="outline" 
                 onClick={handleToggleOrientation}
+                disabled={isComputerThinking}
                 className="w-full flex items-center gap-2 justify-center py-2 h-10 text-xs"
               >
                 <ArrowLeftRight className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -283,6 +547,7 @@ export const PlayGame: React.FC = () => {
               <Button 
                 variant="outline" 
                 onClick={handleReset}
+                disabled={isComputerThinking}
                 className="w-full flex items-center gap-2 justify-center py-2 h-10 text-xs text-zinc-400 hover:text-white"
               >
                 <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -292,7 +557,7 @@ export const PlayGame: React.FC = () => {
               <Button
                 variant="primary"
                 onClick={handleOpenSaveModal}
-                disabled={game.history().length === 0}
+                disabled={game.history().length === 0 || isComputerThinking}
                 className="w-full flex items-center justify-center gap-2 py-2 h-10 text-xs"
               >
                 <Save className="w-3.5 h-3.5" strokeWidth={1.5} />

@@ -312,10 +312,23 @@ export const MyGames: React.FC = () => {
                     <span>Opponent:</span>
                     <span className="text-zinc-200">{selectedGame.opponentName}</span>
                   </div>
+                  {selectedGame.gameMode && (
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Game Mode:</span>
+                      <span className="text-zinc-200 uppercase">{selectedGame.gameMode}</span>
+                    </div>
+                  )}
+                  {selectedGame.difficulty && (
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Difficulty:</span>
+                      <span className="text-zinc-200 uppercase">{selectedGame.difficulty}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-1 border-b border-white/5">
                     <span>Color:</span>
                     <span className="text-zinc-200 uppercase">{selectedGame.playerColor}</span>
                   </div>
+
                   <div className="flex justify-between py-1 border-b border-white/5">
                     <span>Result:</span>
                     <span className="text-zinc-200">{formatResult(selectedGame.result)}</span>
@@ -393,9 +406,22 @@ export const MyGames: React.FC = () => {
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
-                        <span className="text-[9px] border border-white/5 text-zinc-500 font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
-                          As {game.playerColor}
-                        </span>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          <span className="text-[9px] border border-white/5 text-zinc-500 font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
+                            As {game.playerColor}
+                          </span>
+                          {game.gameMode && (
+                            <span className="text-[9px] bg-violet-500/10 border border-violet-500/20 text-violet-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
+                              {game.gameMode}
+                            </span>
+                          )}
+                          {game.difficulty && (
+                            <span className="text-[9px] bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
+                              {game.difficulty}
+                            </span>
+                          )}
+                        </div>
+
                         <h4 className="font-bold text-base text-zinc-200 font-display mt-2 flex items-center gap-1.5 group-hover:text-white transition-colors">
                           vs {game.opponentName}
                         </h4>

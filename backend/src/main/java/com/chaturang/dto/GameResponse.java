@@ -6,6 +6,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import com.chaturang.entity.EngineDifficulty;
+import com.chaturang.entity.GameMode;
+
 
 @Data
 @Builder
@@ -19,5 +22,7 @@ public class GameResponse {
     private Integer moveCount;
     private String pgn;
     private String fen;
+    private GameMode gameMode;
+    private EngineDifficulty difficulty;
     private LocalDateTime createdAt;
 }

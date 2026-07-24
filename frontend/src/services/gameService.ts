@@ -7,6 +7,8 @@ export interface GameSaveRequest {
   moveCount: number;
   pgn: string;
   fen?: string;
+  gameMode?: string;
+  difficulty?: string;
 }
 
 export interface GameResponse {
@@ -17,8 +19,11 @@ export interface GameResponse {
   moveCount: number;
   pgn: string;
   fen: string;
+  gameMode?: string;
+  difficulty?: string;
   createdAt: string;
 }
+
 
 export const gameService = {
   saveGame: async (data: GameSaveRequest): Promise<GameResponse> => {

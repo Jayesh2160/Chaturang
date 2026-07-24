@@ -32,7 +32,10 @@ public class GameServiceImpl implements GameService {
                 .moveCount(request.getMoveCount())
                 .pgn(request.getPgn())
                 .fen(request.getFen())
+                .gameMode(request.getGameMode())
+                .difficulty(request.getDifficulty())
                 .build();
+
 
         Game savedGame = gameRepository.save(game);
         return convertToResponse(savedGame);
@@ -72,6 +75,8 @@ public class GameServiceImpl implements GameService {
                 .moveCount(game.getMoveCount())
                 .pgn(game.getPgn())
                 .fen(game.getFen())
+                .gameMode(game.getGameMode())
+                .difficulty(game.getDifficulty())
                 .createdAt(game.getCreatedAt())
                 .build();
     }

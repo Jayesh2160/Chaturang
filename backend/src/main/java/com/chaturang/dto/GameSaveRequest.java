@@ -2,7 +2,10 @@ package com.chaturang.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import com.chaturang.entity.EngineDifficulty;
+import com.chaturang.entity.GameMode;
 import lombok.AllArgsConstructor;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,4 +32,8 @@ public class GameSaveRequest {
     private String pgn;
 
     private String fen;
+
+    private GameMode gameMode;
+
+    private EngineDifficulty difficulty;
 }
