@@ -20,6 +20,9 @@ RUN ./mvnw package -DskipTests -B
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
+# Install stockfish engine package
+RUN apt-get update && apt-get install -y stockfish && rm -rf /var/lib/apt/lists/*
+
 # Expose the default Spring Boot port
 EXPOSE 8080
 

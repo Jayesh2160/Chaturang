@@ -81,6 +81,10 @@ const PlayGameContent: React.FC = () => {
     isResultModalOpen,
     setIsResultModalOpen,
     timeoutResult,
+
+    // Computer states
+    isComputerThinking,
+    evaluation,
   } = useChessGameContext();
 
   // Modals state
@@ -95,6 +99,9 @@ const PlayGameContent: React.FC = () => {
 
   // Square Click Handler (Click-to-Move)
   const handleSquareClick = (square: Square) => {
+    if (isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
+      return;
+    }
     // If piece selected, attempt move
     if (selectedSquare) {
       if (selectedSquare === square) {
@@ -122,6 +129,9 @@ const PlayGameContent: React.FC = () => {
 
   // Piece Drop Handler (Drag-and-Drop)
   const handlePieceDrop = (sourceSquare: Square, targetSquare: Square): boolean => {
+    if (isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
+      return false;
+    }
     const move = makeMove(sourceSquare, targetSquare);
     if (move) {
       return true;
@@ -276,6 +286,33 @@ const PlayGameContent: React.FC = () => {
             onSquareMouseOut={() => setHoveredSquare(null)}
             shakeSquare={shakeSquare}
           />
+
+          {/* Computer engine status banner */}
+          {(isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && !gameResult && !timeoutResult)) && (
+            <div className="w-full space-y-2 text-left animate-fade-in">
+              {isComputerThinking && (
+                <div className="flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs px-4 py-2.5 rounded-xl font-medium animate-pulse">
+                  <span className="text-sm">♟️</span>
+                  <span>Stockfish is Thinking</span>
+                  <span className="flex gap-1 items-center ml-1">
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </span>
+                </div>
+              )}
+              {gameSetupOptions.gameMode === 'COMPUTER' && !isComputerThinking && !gameResult && !timeoutResult && (
+                <div className="flex items-center justify-between bg-zinc-900/60 border border-white/5 text-zinc-400 text-xs px-4 py-2 rounded-xl font-medium">
+                  <span>Engine Evaluation:</span>
+                  <span className={`font-mono font-bold ${
+                    evaluation.startsWith('+') ? 'text-emerald-400' : evaluation.startsWith('-') ? 'text-red-400' : 'text-zinc-300'
+                  }`}>
+                    {evaluation}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Bottom Player (You) Panel */}
           <PlayerPanel

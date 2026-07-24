@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Square } from 'chess.js';
 import type {
   BoardThemeConfig,
@@ -19,6 +20,7 @@ import { useMoveHighlights } from '../hooks/useMoveHighlights';
 import { usePremove } from '../hooks/usePremove';
 import { useGameSounds } from '../hooks/useGameSounds';
 import { useGamePersistence } from '../hooks/useGamePersistence';
+import { engineService } from '../services/engineService';
 
 interface ChessGameContextType {
   // Engine
@@ -92,6 +94,10 @@ interface ChessGameContextType {
   isResultModalOpen: boolean;
   setIsResultModalOpen: (v: boolean) => void;
   timeoutResult: GameResult | null;
+
+  // Computer Engine Addition
+  isComputerThinking: boolean;
+  evaluation: string;
 }
 
 const ChessGameContext = createContext<ChessGameContextType | undefined>(undefined);
@@ -99,6 +105,40 @@ const ChessGameContext = createContext<ChessGameContextType | undefined>(undefin
 export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { saveGameState, loadUserPreferences, saveUserPreferences } =
     useGamePersistence();
+
+  const [searchParams] = useSearchParams();
+  const gameModeParam = (searchParams.get('gameMode') || 'SELF').toUpperCase() as 'SELF' | 'COMPUTER' | 'ONLINE' | 'ANALYSIS';
+  const difficultyParam = (searchParams.get('difficulty') || 'MEDIUM').toUpperCase() as 'EASY' | 'MEDIUM' | 'HARD';
+  const colorParam = (searchParams.get('color') || 'white') as 'white' | 'black' | 'random';
+  const timeControlParam = (searchParams.get('timeControl') || 'rapid') as 'classic' | 'blitz' | 'rapid' | 'bullet';
+
+  const getDifficultyRating = (diff: string) => {
+    switch (diff) {
+      case 'EASY': return 600;
+      case 'MEDIUM': return 1200;
+      case 'HARD': return 1800;
+      default: return 1200;
+    }
+  };
+  const getDifficultyName = (diff: string) => {
+    switch (diff) {
+      case 'EASY': return 'Stockfish (600)';
+      case 'MEDIUM': return 'Stockfish (1200)';
+      case 'HARD': return 'Stockfish (1800)';
+      default: return 'Stockfish (1200)';
+    }
+  };
+
+  const getInitialSeconds = (mode: string) => {
+    switch (mode) {
+      case 'classic': return 240; // 4 hours
+      case 'blitz': return 3;
+      case 'bullet': return 1;
+      case 'rapid':
+      default:
+        return 10;
+    }
+  };
 
   // Load saved preferences
   const savedPrefs = loadUserPreferences();
@@ -108,18 +148,23 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   // Setup options
-  const [gameSetupOptions, setGameSetupOptions] = useState<GameSetupOptions>({
-    presetId: savedPrefs?.lastPresetId || 'rapid_10_0',
-    baseMinutes: 10,
-    incrementSeconds: 0,
-    rated: true,
-    userColor: 'white',
-    themeId: themeId,
-    autoFlip: savedPrefs?.autoFlip || false,
-    premovesEnabled: premovesEnabled,
-    soundEnabled: savedPrefs?.soundEnabled ?? true,
-    opponentName: 'Grandmaster Bot',
-    opponentRating: CHESS_UI.DEFAULT_OPPONENT_RATING,
+  const [gameSetupOptions, setGameSetupOptions] = useState<GameSetupOptions>(() => {
+    const defaultPreset = DEFAULT_CLOCK_PRESETS.find((p) => p.id === `${timeControlParam}_${getInitialSeconds(timeControlParam)}_0`) || DEFAULT_CLOCK_PRESETS[3];
+    return {
+      presetId: defaultPreset.id,
+      baseMinutes: defaultPreset.baseMinutes,
+      incrementSeconds: defaultPreset.incrementSeconds,
+      rated: true,
+      userColor: colorParam,
+      themeId: themeId,
+      autoFlip: savedPrefs?.autoFlip || false,
+      premovesEnabled: premovesEnabled,
+      soundEnabled: savedPrefs?.soundEnabled ?? true,
+      opponentName: gameModeParam === 'COMPUTER' ? getDifficultyName(difficultyParam) : 'Grandmaster Bot',
+      opponentRating: gameModeParam === 'COMPUTER' ? getDifficultyRating(difficultyParam) : CHESS_UI.DEFAULT_OPPONENT_RATING,
+      gameMode: gameModeParam,
+      difficulty: difficultyParam,
+    };
   });
 
   const [activePreset, setActivePreset] = useState<ClockPreset>(
@@ -134,6 +179,28 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isResultModalOpen, setIsResultModalOpen] = useState<boolean>(false);
   const [timeoutResult, setTimeoutResult] = useState<GameResult | null>(null);
 
+  // Resolved user starting color state
+  const [resolvedUserColor, setResolvedUserColor] = useState<'w' | 'b'>(() => {
+    if (colorParam === 'black') return 'b';
+    if (colorParam === 'random') return Math.random() < 0.5 ? 'w' : 'b';
+    return 'w';
+  });
+
+  // Computer States
+  const [isComputerThinking, setIsComputerThinking] = useState<boolean>(false);
+  const [evaluation, setEvaluation] = useState<string>('0.00');
+
+  // Sync resolved user color with game setup options
+  useEffect(() => {
+    if (gameSetupOptions.userColor === 'black') {
+      setResolvedUserColor('b');
+    } else if (gameSetupOptions.userColor === 'random') {
+      setResolvedUserColor(Math.random() < 0.5 ? 'w' : 'b');
+    } else {
+      setResolvedUserColor('w');
+    }
+  }, [gameSetupOptions.userColor]);
+
   // Board shake on illegal move
   const [shakeSquare, setShakeSquare] = useState<boolean>(false);
   const triggerShake = useCallback(() => {
@@ -145,7 +212,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const userPlayer: PlayerInfo = {
     name: 'You',
     rating: CHESS_UI.DEFAULT_USER_RATING,
-    color: gameSetupOptions.userColor === 'black' ? 'b' : 'w',
+    color: resolvedUserColor,
     isHuman: true,
   };
 
@@ -218,23 +285,9 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [engine.gameResult]);
 
-  // Execute Move wrapper with sounds, clock switch, auto-flip, and premove handling
-  const handleMakeMove = useCallback(
+  // Internal execute move logic
+  const executeMoveInternal = useCallback(
     (from: Square, to: Square, promotionPiece?: any) => {
-      // Check if it's user's turn
-      const currentTurn = engine.turn;
-      const isUserTurn =
-        (gameSetupOptions.userColor === 'white' && currentTurn === 'w') ||
-        (gameSetupOptions.userColor === 'black' && currentTurn === 'b') ||
-        gameSetupOptions.userColor === 'random'; // default allows both in local mode
-
-      if (!isUserTurn) {
-        // Queue premove if opponent turn
-        premoveHook.queuePremove(from, to, promotionPiece);
-        return null;
-      }
-
-      // Execute move on engine
       const moveResult = engine.makeMove(from, to, promotionPiece);
       if (moveResult) {
         const isCapture = Boolean(moveResult.captured);
@@ -268,7 +321,30 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return null;
       }
     },
-    [engine, gameSetupOptions, premoveHook, sounds, clock, orientation, triggerShake]
+    [engine, sounds, clock, orientation, triggerShake, premoveHook]
+  );
+
+  // Execute Move wrapper with sounds, clock switch, auto-flip, and premove handling
+  const handleMakeMove = useCallback(
+    (from: Square, to: Square, promotionPiece?: any, isComputerCall = false) => {
+      if (!isComputerCall) {
+        // Check if it's user's turn
+        const currentTurn = engine.turn;
+        const isUserTurn =
+          gameSetupOptions.gameMode !== 'COMPUTER' || // local match allows all turns
+          (resolvedUserColor === 'w' && currentTurn === 'w') ||
+          (resolvedUserColor === 'b' && currentTurn === 'b');
+
+        if (!isUserTurn) {
+          // Queue premove if opponent turn
+          premoveHook.queuePremove(from, to, promotionPiece);
+          return null;
+        }
+      }
+
+      return executeMoveInternal(from, to, promotionPiece);
+    },
+    [engine.turn, gameSetupOptions.gameMode, resolvedUserColor, executeMoveInternal, premoveHook]
   );
 
   // Change Clock Preset
@@ -321,6 +397,74 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [engine.fen, engine.history, clock.whiteTime, clock.blackTime, engine.turn, gameSetupOptions, saveGameState]);
 
+  // Trigger evaluation on every move when gameMode is COMPUTER
+  useEffect(() => {
+    if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || timeoutResult) return;
+
+    const getEval = async () => {
+      try {
+        const res = await engineService.evaluate({ fen: engine.fen });
+        setEvaluation(res.evaluation);
+      } catch (err) {
+        // Suppress eval errors
+      }
+    };
+    getEval();
+  }, [engine.fen, gameSetupOptions.gameMode, engine.isGameOver, timeoutResult]);
+
+  // Trigger Computer/Stockfish move when it's computer's turn
+  useEffect(() => {
+    if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || timeoutResult || isComputerThinking) return;
+
+    const currentTurn = engine.turn; // 'w' or 'b'
+    const computerColor = resolvedUserColor === 'w' ? 'b' : 'w';
+
+    if (currentTurn === computerColor) {
+      const makeComputerMove = async () => {
+        setIsComputerThinking(true);
+        const startTime = Date.now();
+        try {
+          const res = await engineService.getBestMove({
+            fen: engine.fen,
+            difficulty: gameSetupOptions.difficulty || 'MEDIUM',
+          });
+
+          const bestMove = res.bestMove;
+          const moveFrom = bestMove.slice(0, 2) as Square;
+          const moveTo = bestMove.slice(2, 4) as Square;
+          const movePromotion = bestMove.length > 4 ? bestMove.charAt(4) : undefined;
+
+          // Natural thinking delay (at least 800ms)
+          const elapsedTime = Date.now() - startTime;
+          const delay = Math.max(800 - elapsedTime, 0);
+
+          setTimeout(() => {
+            // Execute computer move
+            handleMakeMove(moveFrom, moveTo, movePromotion, true);
+            setIsComputerThinking(false);
+          }, delay);
+        } catch (err) {
+          console.error('Computer move calculation failed:', err);
+          setIsComputerThinking(false);
+        }
+      };
+
+      // Slight delay before start thinking to feel natural
+      const startTimer = setTimeout(makeComputerMove, 300);
+      return () => clearTimeout(startTimer);
+    }
+  }, [
+    engine.fen,
+    engine.turn,
+    gameSetupOptions.gameMode,
+    gameSetupOptions.difficulty,
+    resolvedUserColor,
+    engine.isGameOver,
+    timeoutResult,
+    isComputerThinking,
+    handleMakeMove,
+  ]);
+
   const value: ChessGameContextType = {
     // Engine
     chess: engine.chess,
@@ -345,6 +489,8 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setTimeoutResult(null);
       setIsResultModalOpen(false);
       premoveHook.clearPremove();
+      setEvaluation('0.00');
+      setIsComputerThinking(false);
     },
     loadFen: engine.loadFen,
     canUndo: engine.canUndo,
@@ -397,6 +543,10 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     isResultModalOpen,
     setIsResultModalOpen,
     timeoutResult,
+
+    // Computer states
+    isComputerThinking,
+    evaluation,
   };
 
   return <ChessGameContext.Provider value={value}>{children}</ChessGameContext.Provider>;

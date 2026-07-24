@@ -76,6 +76,8 @@ export interface GameSetupOptions {
   soundEnabled: boolean;
   opponentName: string;
   opponentRating: number;
+  gameMode?: 'SELF' | 'COMPUTER' | 'ONLINE' | 'ANALYSIS';
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
 }
 
 export interface GameResult {
