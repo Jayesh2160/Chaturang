@@ -4,11 +4,14 @@ import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/Button';
 import { lessonService } from '../services/lessonService';
 import type { ProgressResponse, LessonResponse } from '../services/lessonService';
-import { Clock, BookOpen, ArrowLeft, CheckCircle, ArrowRight } from 'lucide-react';
+import { gameService } from '../services/gameService';
+import { calculateGamificationStats } from '../utils/gamification';
+import { Clock, BookOpen, ArrowLeft, CheckCircle, ArrowRight, Award } from 'lucide-react';
 
 export const AcademyProgress: React.FC = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
+  const [gamesCount, setGamesCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'completed' | 'remaining'>('remaining');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -16,10 +19,15 @@ export const AcademyProgress: React.FC = () => {
     const fetchProgress = async () => {
       try {
         setIsLoading(true);
-        const data = await lessonService.getProgress();
-        setProgress(data);
-        // If they have completed some but not all, show remaining first, otherwise show completed
-        if (data.remainingLessons.length === 0 && data.completedLessons.length > 0) {
+        const [progressData, gamesData] = await Promise.all([
+          lessonService.getProgress(),
+          gameService.getGames()
+        ]);
+        
+        setProgress(progressData);
+        setGamesCount(gamesData.length);
+        
+        if (progressData.remainingLessons.length === 0 && progressData.completedLessons.length > 0) {
           setActiveTab('completed');
         }
       } catch (err) {
@@ -108,6 +116,9 @@ export const AcademyProgress: React.FC = () => {
     );
   };
 
+  // Calculate statistics
+  const stats = progress ? calculateGamificationStats(progress.completedCount, gamesCount, progress.streak) : null;
+
   return (
     <Layout>
       <div className="space-y-12 animate-fade-in text-left">
@@ -128,7 +139,7 @@ export const AcademyProgress: React.FC = () => {
               Academy Progress
             </h1>
             <p className="text-zinc-400 text-sm font-light">
-              Track study coordinate hours, audit milestones, and review completed subjects.
+              Track study hours, audit milestones, and review completed subjects.
             </p>
           </div>
         </div>
@@ -145,12 +156,41 @@ export const AcademyProgress: React.FC = () => {
             </div>
             <div className="h-[100px] rounded-2xl bg-zinc-900/10 border border-white/5" />
           </div>
-        ) : !progress ? (
+        ) : !progress || !stats ? (
           <div className="py-12 text-center text-zinc-500 border border-white/5 rounded-2xl text-xs font-light bg-zinc-950/20">
             Failed to load progress data. Please refresh.
           </div>
         ) : (
           <>
+            {/* Level/XP Progress overview header */}
+            <div className="p-6 rounded-2xl bg-zinc-950/30 border border-white/5 flex flex-col md:flex-row items-center gap-6 shadow-lg">
+              <div className="h-16 w-16 rounded-2xl bg-brand-accent/10 border border-brand-accent/25 flex items-center justify-center text-brand-accent shrink-0 animate-pulse">
+                <Award className="w-8 h-8" strokeWidth={1.5} />
+              </div>
+              <div className="flex-1 space-y-3 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-sm font-black font-display">Player Level {stats.level}</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded bg-brand-accent/15 text-brand-accent border border-brand-accent/20">
+                      {stats.totalXp} Total XP
+                    </span>
+                  </div>
+                  <span className="text-zinc-400">{stats.xpInCurrentLevel} / {stats.xpRequiredForNextLevel} XP</span>
+                </div>
+                
+                <div className="w-full bg-zinc-900 border border-white/5 h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-brand-accent h-full rounded-full transition-all duration-700 ease-out" 
+                    style={{ width: `${stats.xpProgressPercentage}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[9px] text-zinc-550 font-bold uppercase tracking-widest">
+                  <span>Level {stats.level}</span>
+                  <span>{stats.xpRequiredForNextLevel - stats.xpInCurrentLevel} XP to Level {stats.level + 1}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Stats Dashboard Grid (Apple style, minimal open metrics) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
               {/* Daily Streak */}
@@ -171,7 +211,7 @@ export const AcademyProgress: React.FC = () => {
                 <div className="space-y-2">
                   <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">Lessons Completed</span>
                   <span className="text-3xl font-extrabold font-display text-white">
-                    {progress.completedCount} <span className="text-zinc-550 text-xl">/ {progress.totalCount}</span>
+                    {progress.completedCount} <span className="text-zinc-555 text-xl">/ {progress.totalCount}</span>
                   </span>
                 </div>
                 <div className="text-[10px] text-zinc-500 font-light mt-4 pt-2 border-t border-white/5">
@@ -184,7 +224,7 @@ export const AcademyProgress: React.FC = () => {
                 <div className="space-y-2">
                   <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">Hours Studied</span>
                   <span className="text-3xl font-extrabold font-display text-white">
-                    {progress.hoursStudied.toFixed(1)} <span className="text-zinc-550 text-xl">hrs</span>
+                    {progress.hoursStudied.toFixed(1)} <span className="text-zinc-555 text-xl">hrs</span>
                   </span>
                 </div>
                 <div className="text-[10px] text-zinc-500 font-light mt-4 pt-2 border-t border-white/5">

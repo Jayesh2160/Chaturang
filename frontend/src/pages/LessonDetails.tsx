@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
@@ -7,11 +7,83 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { lessonService } from '../services/lessonService';
 import type { LessonResponse } from '../services/lessonService';
-import { ArrowLeft, Clock, Award, CheckCircle, RotateCcw, Play, ChevronRight, AlertTriangle } from 'lucide-react';
+import { gameService } from '../services/gameService';
+import { calculateGamificationStats } from '../utils/gamification';
+import { 
+  ArrowLeft, 
+  Clock, 
+  Award, 
+  CheckCircle, 
+  RotateCcw, 
+  Play, 
+  ChevronRight, 
+  AlertTriangle,
+  BookOpen,
+  Trophy,
+  Sparkles,
+  Star,
+  Check
+} from 'lucide-react';
 import { isValidFen, cleanFenForChessJs } from '../utils/fenValidation';
 
 // ==========================================
-// 1. LESSON HEADER COMPONENT
+// 1. DATA TYPES & PARSER
+// ==========================================
+interface ExerciseOrChallenge {
+  fen: string;
+  moves: string[];
+  instruction: string;
+  success: string;
+}
+
+const parseLessonContent = (content: string) => {
+  let cleanContent = content;
+  let exercise: ExerciseOrChallenge | null = null;
+  let challenge: ExerciseOrChallenge | null = null;
+
+  const exerciseRegex = /\[EXERCISE\]([\s\S]*?)\[\/EXERCISE\]/;
+  const challengeRegex = /\[CHALLENGE\]([\s\S]*?)\[\/CHALLENGE\]/;
+
+  const parseBlock = (blockText: string): ExerciseOrChallenge => {
+    const lines = blockText.split('\n');
+    let fen = 'start';
+    let moves: string[] = [];
+    let instruction = '';
+    let success = '';
+
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('FEN:')) {
+        fen = trimmed.substring(4).trim();
+      } else if (trimmed.startsWith('Moves:')) {
+        moves = trimmed.substring(6).trim().toLowerCase().split(',').map(m => m.trim());
+      } else if (trimmed.startsWith('Instruction:')) {
+        instruction = trimmed.substring(12).trim();
+      } else if (trimmed.startsWith('Success:')) {
+        success = trimmed.substring(8).trim();
+      }
+    });
+
+    return { fen, moves, instruction, success };
+  };
+
+  const exerciseMatch = content.match(exerciseRegex);
+  if (exerciseMatch) {
+    exercise = parseBlock(exerciseMatch[1]);
+    cleanContent = cleanContent.replace(exerciseMatch[0], '');
+  }
+
+  const challengeMatch = content.match(challengeRegex);
+  if (challengeMatch) {
+    challenge = parseBlock(challengeMatch[1]);
+    cleanContent = cleanContent.replace(challengeMatch[0], '');
+  }
+
+  return { cleanContent: cleanContent.trim(), exercise, challenge };
+};
+
+// ==========================================
+// 2. LESSON HEADER COMPONENT
 // ==========================================
 interface LessonHeaderProps {
   lesson: LessonResponse;
@@ -71,7 +143,7 @@ const LessonHeader: React.FC<LessonHeaderProps> = ({ lesson, onBack }) => {
 };
 
 // ==========================================
-// 2. CHESSBOARD RENDERER (static/reference boards)
+// 3. CHESSBOARD RENDERER (static/reference boards)
 // ==========================================
 interface ChessBoardRendererProps {
   fen: string;
@@ -112,7 +184,7 @@ const ChessBoardRenderer: React.FC<ChessBoardRendererProps> = ({ fen, lessonTitl
 };
 
 // ==========================================
-// 3. LESSON CONTENT COMPONENT
+// 4. LESSON CONTENT COMPONENT
 // ==========================================
 interface LessonContentProps {
   content: string;
@@ -120,7 +192,6 @@ interface LessonContentProps {
 }
 
 const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) => {
-  // Simple bold text parser (**text**)
   const parseBold = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, idx) => {
@@ -139,10 +210,8 @@ const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) =
           const trimmed = line.trim();
           if (!trimmed) return null;
 
-          // Ignore custom takeaways section headers or main title header as they are parsed separately
           if (trimmed.startsWith('# ') || trimmed.startsWith('### Key Takeaways')) return null;
 
-          // Header 2
           if (trimmed.startsWith('## ')) {
             return (
               <h3 key={i} className="text-xl font-bold text-white font-display pt-6 pb-2 border-b border-white/5">
@@ -151,7 +220,6 @@ const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) =
             );
           }
 
-          // Header 3
           if (trimmed.startsWith('### ')) {
             return (
               <h4 key={i} className="text-base font-bold text-zinc-100 font-display pt-4">
@@ -160,7 +228,6 @@ const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) =
             );
           }
 
-          // Bullet points
           if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
             return (
               <ul key={i} className="list-disc pl-6 space-y-1.5 text-zinc-350 my-2">
@@ -169,7 +236,6 @@ const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) =
             );
           }
 
-          // Regular paragraph
           return (
             <p key={i} className="font-light">
               {parseBold(line)}
@@ -180,7 +246,6 @@ const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) =
     );
   };
 
-  // Splitting by BOARD markers to mix text blocks and chessboard renderers
   const parts = content.split(/(\[BOARD:[^\]]+\])/g);
 
   return (
@@ -198,69 +263,210 @@ const LessonContent: React.FC<LessonContentProps> = ({ content, lessonTitle }) =
 };
 
 // ==========================================
-// 4. KEY TAKEAWAYS COMPONENT
+// 5. INTERACTIVE EXERCISE / CHALLENGE COMPONENT
 // ==========================================
-interface KeyTakeawaysProps {
-  content: string;
+interface ExerciseViewProps {
+  exercise: ExerciseOrChallenge;
+  isChallenge: boolean;
+  onSuccess: () => void;
 }
 
-const KeyTakeaways: React.FC<KeyTakeawaysProps> = ({ content }) => {
-  // Extract the takeaways section from the markdown content
-  const getTakeaways = () => {
-    const lines = content.split('\n');
-    const index = lines.findIndex(l => l.trim().toLowerCase().includes('takeaways'));
-    if (index === -1) return null;
+const ExerciseView: React.FC<ExerciseViewProps> = ({ exercise, isChallenge, onSuccess }) => {
+  const isFenValid = isValidFen(exercise.fen);
 
-    const takeawaysLines = lines.slice(index + 1);
-    return takeawaysLines
-      .map(line => line.trim())
-      .filter(line => line.startsWith('- ') || line.startsWith('* '))
-      .map(line => line.substring(2));
+  const [game, setGame] = useState(() => {
+    try {
+      if (isFenValid) {
+        return new Chess(exercise.fen === 'start' ? undefined : cleanFenForChessJs(exercise.fen));
+      }
+    } catch (e) {
+      console.error('Failed to parse FEN in exercise', e);
+    }
+    return new Chess();
+  });
+
+  const [boardFen, setBoardFen] = useState(() => game.fen());
+  const [moveStatus, setMoveStatus] = useState<string>('Your move. Find the correct tactic!');
+  const [currentMoveIdx, setCurrentMoveIdx] = useState(0);
+  const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info');
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  useEffect(() => {
+    try {
+      const g = new Chess(exercise.fen === 'start' ? undefined : cleanFenForChessJs(exercise.fen));
+      setGame(g);
+      setBoardFen(g.fen());
+      setMoveStatus('Your move. Find the correct tactic!');
+      setCurrentMoveIdx(0);
+      setStatusType('info');
+      setIsCompleted(false);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [exercise]);
+
+  const handleMove = (sourceSquare: string, targetSquare: string) => {
+    if (isCompleted) return false;
+
+    try {
+      const uciMove = (sourceSquare + targetSquare).toLowerCase();
+      const expectedMove = exercise.moves[currentMoveIdx];
+
+      // Validate against coordinate move (e.g. g5f6) or standard coordinate plus promo (e.g. e7e8q)
+      const isPromoMove = expectedMove.length === 5;
+      const moveOptions = {
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: isPromoMove ? expectedMove.charAt(4) : 'q'
+      };
+
+      // Try making the move in chess.js
+      const gameCopy = new Chess(game.fen());
+      const move = gameCopy.move(moveOptions);
+
+      if (move) {
+        // If move matches coordinates or uciMove is part of the solution
+        if (uciMove === expectedMove || uciMove + (isPromoMove ? expectedMove.charAt(4) : '') === expectedMove) {
+          game.move(moveOptions);
+          setBoardFen(game.fen());
+          
+          const nextIdx = currentMoveIdx + 1;
+          
+          if (nextIdx >= exercise.moves.length) {
+            // Fully completed the exercise!
+            setMoveStatus(exercise.success || 'Correct move! Well done.');
+            setStatusType('success');
+            setIsCompleted(true);
+            onSuccess();
+          } else {
+            // Make intermediate move (opponent move in sequence)
+            setCurrentMoveIdx(nextIdx);
+            setMoveStatus('Good! Applying opponent response...');
+            setStatusType('info');
+
+            // Play opponent response after a short delay
+            setTimeout(() => {
+              const opponentMove = exercise.moves[nextIdx];
+              const oppFrom = opponentMove.substring(0, 2);
+              const oppTo = opponentMove.substring(2, 4);
+              const oppPromo = opponentMove.length === 5 ? opponentMove.charAt(4) : undefined;
+              
+              game.move({ from: oppFrom, to: oppTo, promotion: oppPromo });
+              setBoardFen(game.fen());
+              setCurrentMoveIdx(nextIdx + 1);
+
+              if (nextIdx + 1 >= exercise.moves.length) {
+                setMoveStatus(exercise.success || 'Correct move! Well done.');
+                setStatusType('success');
+                setIsCompleted(true);
+                onSuccess();
+              } else {
+                setMoveStatus('Your move. Continue the sequence!');
+              }
+            }, 800);
+          }
+          return true;
+        } else {
+          setMoveStatus('Incorrect move. That is not the solution. Try again!');
+          setStatusType('error');
+          return false;
+        }
+      }
+    } catch (e) {
+      setMoveStatus('Illegal move. Try moving a different piece.');
+      setStatusType('error');
+    }
+    return false;
   };
 
-  const takeaways = getTakeaways();
-
-  if (!takeaways || takeaways.length === 0) return null;
+  const handleReset = () => {
+    try {
+      const g = new Chess(exercise.fen === 'start' ? undefined : cleanFenForChessJs(exercise.fen));
+      setGame(g);
+      setBoardFen(g.fen());
+      setMoveStatus('Your move. Find the correct tactic!');
+      setCurrentMoveIdx(0);
+      setStatusType('info');
+      setIsCompleted(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
-    <Card className="p-6 border-white/5 bg-zinc-950/40 text-left mt-10 rounded-2xl relative overflow-hidden">
-      {/* Subtle border left accent in purple */}
-      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-accent/40" />
-      <h3 className="text-sm font-bold font-display text-white flex items-center gap-2 mb-4 pl-1">
-        <Award className="w-4 h-4 text-brand-accent" strokeWidth={1.5} />
-        Key Takeaways
-      </h3>
-      <ul className="space-y-3 pl-1">
-        {takeaways.map((takeaway, idx) => (
-          <li key={idx} className="text-xs sm:text-sm text-zinc-300 flex items-start gap-2.5 leading-relaxed font-light">
-            <span className="h-1.5 w-1.5 rounded-full bg-zinc-650 shrink-0 mt-2" />
-            <span>{takeaway}</span>
-          </li>
-        ))}
-      </ul>
-    </Card>
+    <div className="space-y-6 text-left max-w-md mx-auto">
+      <div className="space-y-2">
+        <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-brand-accent/10 text-brand-accent border border-brand-accent/15">
+          {isChallenge ? 'Mini Challenge' : 'Board Exercise'}
+        </span>
+        <p className="text-zinc-200 text-sm leading-relaxed font-semibold">
+          {exercise.instruction}
+        </p>
+      </div>
+
+      {!isFenValid ? (
+        <Card className="flex flex-col items-center justify-center p-8 bg-amber-500/[0.02] border-amber-500/20 rounded-2xl shadow-lg text-center">
+          <AlertTriangle className="w-8 h-8 text-amber-500 mb-3" strokeWidth={1.5} />
+          <h4 className="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-1">Exercise Unavailable</h4>
+          <p className="text-xs text-zinc-400 font-light leading-relaxed">
+            This exercise configuration contains invalid board coordinates.
+          </p>
+        </Card>
+      ) : (
+        <Card className="p-6 bg-zinc-950/20 border-white/5 rounded-2xl shadow-lg flex flex-col items-center">
+          <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-6 bg-zinc-950 p-1.5">
+            <Chessboard 
+              options={{
+                position: boardFen,
+                onPieceDrop: ({ sourceSquare, targetSquare }) => {
+                  if (targetSquare) {
+                    return handleMove(sourceSquare, targetSquare);
+                  }
+                  return false;
+                },
+                darkSquareStyle: { backgroundColor: '#2e2e33' },
+                lightSquareStyle: { backgroundColor: '#e4e4e7' }
+              }}
+            />
+          </div>
+
+          <div className="w-full border-t border-white/5 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1 text-left">
+              <span className={`text-xs font-semibold block leading-tight ${
+                statusType === 'success' 
+                  ? 'text-emerald-400' 
+                  : statusType === 'error' 
+                    ? 'text-red-400' 
+                    : 'text-zinc-400'
+              }`}>
+                {moveStatus}
+              </span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleReset}
+              className="flex items-center justify-center gap-1 text-[10px] py-1 px-3 h-8 font-bold uppercase tracking-wider self-start sm:self-auto border-white/10"
+            >
+              <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+              Reset
+            </Button>
+          </div>
+        </Card>
+      )}
+    </div>
   );
 };
 
 // ==========================================
-// 5. LESSON FOOTER / INTERACTIVE PRACTICE & NEXT PATH
+// 6. PRACTICE POSITION (SANDBOX)
 // ==========================================
-interface LessonFooterProps {
-  isCompleted: boolean;
-  onComplete: () => Promise<void>;
-  nextLesson: LessonResponse | null;
+interface PracticeSandboxProps {
   practiceFen: string;
-  lessonTitle: string;
+  onNext: () => void;
 }
 
-const LessonFooter: React.FC<LessonFooterProps> = ({
-  isCompleted,
-  onComplete,
-  nextLesson,
-  practiceFen,
-  lessonTitle
-}) => {
-  const navigate = useNavigate();
+const PracticeSandbox: React.FC<PracticeSandboxProps> = ({ practiceFen, onNext }) => {
   const isPracticeFenValid = isValidFen(practiceFen);
 
   const [game, setGame] = useState(() => {
@@ -269,44 +475,24 @@ const LessonFooter: React.FC<LessonFooterProps> = ({
         return new Chess(practiceFen === 'start' ? undefined : cleanFenForChessJs(practiceFen));
       }
     } catch (e) {
-      console.error(`Invalid FEN detected in lesson: "${lessonTitle}"`);
+      console.error(e);
     }
-    return new Chess(); // Default starting position as safe fallback
+    return new Chess();
   });
 
   const [boardFen, setBoardFen] = useState(() => game.fen());
   const [moveStatus, setMoveStatus] = useState<string>('Interact with the position below to analyze moves.');
-  const [isMarking, setIsMarking] = useState(false);
-
-  // Sync practice game if FEN changes
-  useEffect(() => {
-    try {
-      if (isPracticeFenValid) {
-        const g = new Chess(practiceFen === 'start' ? undefined : cleanFenForChessJs(practiceFen));
-        setGame(g);
-        setBoardFen(g.fen());
-        setMoveStatus('Interact with the position below to analyze moves.');
-        return;
-      }
-    } catch (e) {
-      // already logged or safe fallback
-    }
-    const g = new Chess();
-    setGame(g);
-    setBoardFen(g.fen());
-  }, [practiceFen, isPracticeFenValid]);
 
   const handleMove = (sourceSquare: string, targetSquare: string) => {
     try {
       const move = game.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: 'q' // Auto-promote to Queen for simplicity
+        promotion: 'q'
       });
 
       if (move) {
         setBoardFen(game.fen());
-        
         let status = `Move: ${move.san}`;
         if (game.isCheckmate()) {
           status += ' • Checkmate!';
@@ -338,122 +524,222 @@ const LessonFooter: React.FC<LessonFooterProps> = ({
     }
   };
 
-  const handleCompleteClick = async () => {
-    try {
-      setIsMarking(true);
-      await onComplete();
-    } catch (err) {
-      console.error('Failed to complete lesson', err);
-    } finally {
-      setIsMarking(false);
-    }
-  };
-
   return (
-    <div className="mt-16 space-y-10 border-t border-white/5 pt-10">
-      {/* Practice Board Section */}
-      <div className="space-y-6 text-left">
-        <div className="space-y-1">
-          <h3 className="text-xl font-bold font-display text-white flex items-center gap-2">
-            <Play className="w-4 h-4 text-brand-accent" strokeWidth={1.5} />
-            Practice Position
-          </h3>
-          <p className="text-xs text-zinc-550 font-light">
-            Toggle and test various piece movements freely to audit this specific board layout.
-          </p>
-        </div>
-
-        {!isPracticeFenValid ? (
-          <Card className="flex flex-col items-center justify-center p-8 bg-amber-500/[0.02] border-amber-500/20 max-w-md mx-auto rounded-2xl shadow-lg text-center">
-            <AlertTriangle className="w-8 h-8 text-amber-500 mb-3 animate-pulse" strokeWidth={1.5} />
-            <h4 className="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-1">Practice Board Unavailable</h4>
-            <p className="text-xs text-zinc-400 font-light leading-relaxed">
-              The practice configuration for this lesson contains invalid coordinates.
-            </p>
-          </Card>
-        ) : (
-          <Card className="flex flex-col items-center justify-center p-6 bg-zinc-950/20 border-white/5 max-w-md mx-auto rounded-2xl shadow-lg">
-            <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-4 bg-zinc-950 p-1.5">
-              <Chessboard 
-                options={{
-                  position: boardFen,
-                  onPieceDrop: ({ sourceSquare, targetSquare }) => {
-                    if (targetSquare) {
-                      return handleMove(sourceSquare, targetSquare);
-                    }
-                    return false;
-                  },
-                  darkSquareStyle: { backgroundColor: '#2e2e33' },
-                  lightSquareStyle: { backgroundColor: '#e4e4e7' }
-                }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between w-full border-t border-white/5 pt-4 mt-2">
-              <span className="text-xs font-semibold text-zinc-450 max-w-[65%] text-left truncate">
-                {moveStatus}
-              </span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleReset}
-                className="flex items-center gap-1 text-[10px] py-1 px-2.5 h-8 font-bold uppercase tracking-wider"
-              >
-                <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
-                Reset
-              </Button>
-            </div>
-          </Card>
-        )}
+    <div className="space-y-6 text-left max-w-md mx-auto">
+      <div className="space-y-1">
+        <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-brand-accent/10 text-brand-accent border border-brand-accent/15">
+          Practice Position
+        </span>
+        <p className="text-zinc-400 text-xs font-light">
+          Analyze moves freely. Toggle and test various coordinates on this board layout.
+        </p>
       </div>
 
-      {/* Action Buttons: Complete Lesson / Next Lesson */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/5 pt-8">
-        {!isCompleted ? (
-          <Button 
-            onClick={handleCompleteClick}
-            isLoading={isMarking}
-            className="w-full sm:w-auto bg-white text-zinc-950 font-bold hover:bg-zinc-200 flex items-center justify-center gap-1.5 px-6 py-2.5 shadow-md"
-          >
-            <CheckCircle className="w-4 h-4" strokeWidth={1.5} />
-            Mark Lesson as Completed
-          </Button>
-        ) : (
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
-            <CheckCircle className="w-4 h-4" strokeWidth={1.5} />
-            Study Complete
+      {!isPracticeFenValid ? (
+        <Card className="flex flex-col items-center justify-center p-8 bg-amber-500/[0.02] border-amber-500/20 rounded-2xl shadow-lg text-center">
+          <AlertTriangle className="w-8 h-8 text-amber-500 mb-3" strokeWidth={1.5} />
+          <h4 className="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-1">Practice Board Unavailable</h4>
+          <p className="text-xs text-zinc-400 font-light leading-relaxed">
+            The practice configuration for this lesson contains invalid coordinates.
+          </p>
+        </Card>
+      ) : (
+        <Card className="p-6 bg-zinc-950/20 border-white/5 rounded-2xl shadow-lg flex flex-col items-center">
+          <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-6 bg-zinc-950 p-1.5">
+            <Chessboard 
+              options={{
+                position: boardFen,
+                onPieceDrop: ({ sourceSquare, targetSquare }) => {
+                  if (targetSquare) {
+                    return handleMove(sourceSquare, targetSquare);
+                  }
+                  return false;
+                },
+                darkSquareStyle: { backgroundColor: '#2e2e33' },
+                lightSquareStyle: { backgroundColor: '#e4e4e7' }
+              }}
+            />
           </div>
-        )}
 
-        {nextLesson && (
-          <Button
-            onClick={() => navigate(`/academy/${nextLesson.slug}`)}
-            variant="outline"
-            className="w-full sm:w-auto flex items-center justify-center gap-1.5 py-2.5 hover:bg-white/5 border-white/10"
-          >
-            <div className="text-right hidden sm:block">
-              <span className="text-[8px] text-zinc-550 uppercase font-bold tracking-widest block">Next Up</span>
-              <span className="text-xs text-zinc-350 font-bold block">{nextLesson.title}</span>
+          <div className="w-full border-t border-white/5 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1 text-left">
+              <span className="text-xs font-semibold text-zinc-450 block leading-tight truncate max-w-[240px]">
+                {moveStatus}
+              </span>
             </div>
-            <ChevronRight className="w-4 h-4 text-brand-accent" strokeWidth={1.5} />
-          </Button>
-        )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleReset}
+              className="flex items-center justify-center gap-1 text-[10px] py-1 px-3 h-8 font-bold uppercase tracking-wider border-white/10"
+            >
+              <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+              Reset
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      <div className="pt-4 flex justify-end">
+        <Button onClick={onNext} className="bg-white text-zinc-950 hover:bg-zinc-250 font-bold px-6">
+          Master Lesson
+          <ChevronRight className="ml-2 w-4 h-4" />
+        </Button>
       </div>
     </div>
   );
 };
 
 // ==========================================
-// 6. MAIN LESSON DETAILS PAGE CONTAINER
+// 7. COMPLETED SCREEN (GAMIFIED CELEBRATION)
+// ==========================================
+interface LessonCompleteViewProps {
+  lessonTitle: string;
+  nextLesson: LessonResponse | null;
+  onNextLesson: () => void;
+  onBack: () => void;
+  completedLessonsCount: number;
+  gamesCount: number;
+  streak: number;
+}
+
+const LessonCompleteView: React.FC<LessonCompleteViewProps> = ({
+  lessonTitle,
+  nextLesson,
+  onNextLesson,
+  onBack,
+  completedLessonsCount,
+  gamesCount,
+  streak
+}) => {
+  // Calculate statistics (before adding the current lesson to completedCount, or with current lesson included)
+  // Let's assume completedLessonsCount already includes the lesson they just solved, so they can see the current progress!
+  const stats = calculateGamificationStats(completedLessonsCount, gamesCount, streak);
+
+  return (
+    <Card className="p-8 border-brand-accent/20 bg-zinc-950/40 relative overflow-hidden rounded-3xl max-w-md mx-auto text-center space-y-8 shadow-2xl">
+      <div className="absolute right-0 top-0 h-44 w-44 bg-brand-accent/10 rounded-full filter blur-3xl pointer-events-none" />
+      <div className="absolute left-0 bottom-0 h-44 w-44 bg-emerald-500/5 rounded-full filter blur-3xl pointer-events-none" />
+
+      {/* Trophy and stars */}
+      <div className="relative flex justify-center py-2">
+        <div className="h-20 w-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative animate-pulse">
+          <Award className="w-10 h-10 text-emerald-400" strokeWidth={1.5} />
+        </div>
+        <div className="absolute top-1 right-12 animate-bounce">
+          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+        </div>
+        <div className="absolute bottom-2 left-12 animate-bounce delay-300">
+          <Star className="w-5 h-5 fill-brand-accent text-brand-accent" />
+        </div>
+      </div>
+
+      {/* Headings */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-extrabold font-display text-white tracking-tight">
+          Lesson Mastered!
+        </h2>
+        <p className="text-zinc-400 text-xs font-light px-4">
+          You have successfully completed all coordinate exercises, mini challenges, and position analysis for **{lessonTitle}**.
+        </p>
+      </div>
+
+      {/* XP Reward card */}
+      <div className="p-4 rounded-2xl bg-zinc-900/40 border border-white/5 flex items-center justify-between px-6">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center text-brand-accent">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div className="text-left">
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">XP Awarded</span>
+            <span className="text-sm font-semibold text-zinc-200">Lesson Mastery</span>
+          </div>
+        </div>
+        <span className="text-xl font-black font-display text-brand-accent">
+          +100 XP
+        </span>
+      </div>
+
+      {/* Level Up progress bar */}
+      <div className="space-y-3 text-left">
+        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+          <span className="text-zinc-500">Player Level {stats.level}</span>
+          <span className="text-zinc-350">{stats.xpInCurrentLevel} / {stats.xpRequiredForNextLevel} XP</span>
+        </div>
+        
+        <div className="w-full bg-zinc-900 border border-white/5 h-2 rounded-full overflow-hidden">
+          <div 
+            className="bg-brand-accent h-full rounded-full transition-all duration-1000 ease-out" 
+            style={{ width: `${stats.xpProgressPercentage}%` }}
+          />
+        </div>
+        <p className="text-[10px] text-zinc-650 text-right">
+          {stats.xpRequiredForNextLevel - stats.xpInCurrentLevel} XP to Level {stats.level + 1}
+        </p>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="pt-4 space-y-3">
+        {nextLesson ? (
+          <Button 
+            onClick={onNextLesson}
+            className="w-full bg-white text-zinc-950 hover:bg-zinc-200 font-bold py-3 flex items-center justify-center gap-1.5"
+          >
+            Study Next: {nextLesson.title}
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button 
+            onClick={onBack}
+            className="w-full bg-white text-zinc-950 hover:bg-zinc-200 font-bold py-3"
+          >
+            Back to Academy Curriculum
+          </Button>
+        )}
+        <Button 
+          variant="outline" 
+          onClick={onBack}
+          className="w-full border-white/10 hover:bg-white/5"
+        >
+          View Roadmap
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
+// ==========================================
+// 8. MAIN LESSON DETAILS PAGE
 // ==========================================
 export const LessonDetails: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState<LessonResponse | null>(null);
   const [nextLesson, setNextLesson] = useState<LessonResponse | null>(null);
-  const [practiceFen, setPracticeFen] = useState<string>('start');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Lesson parts
+  const [theoryContent, setTheoryContent] = useState('');
+  const [exercise, setExercise] = useState<ExerciseOrChallenge | null>(null);
+  const [challenge, setChallenge] = useState<ExerciseOrChallenge | null>(null);
+  const [practiceFen, setPracticeFen] = useState('start');
+
+  // Gamification & streak states
+  const [completedLessonsCount, setCompletedLessonsCount] = useState(0);
+  const [gamesCount, setGamesCount] = useState(0);
+  const [streak, setStreak] = useState(1);
+
+  // Steps
+  // 0: Theory / Explanation
+  // 1: Board Exercise
+  // 2: Mini Challenge
+  // 3: Practice Sandbox
+  // 4: Complete Screen
+  const [currentStep, setCurrentStep] = useState(0);
+  const [unlockedSteps, setUnlockedSteps] = useState<boolean[]>([true, false, false, false, false]);
+
+  const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadLessonData = async () => {
@@ -461,12 +747,29 @@ export const LessonDetails: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
+        setCurrentStep(0);
         
         // Fetch lesson detail
         const fetchedLesson = await lessonService.getLesson(slug);
         setLesson(fetchedLesson);
 
-        // Extract practice FEN
+        // Parse content blocks
+        const parsed = parseLessonContent(fetchedLesson.content);
+        setTheoryContent(parsed.cleanContent);
+        setExercise(parsed.exercise);
+        setChallenge(parsed.challenge);
+
+        // Lock/unlock steps based on what is available in the lesson and if it's already completed
+        const isComplete = fetchedLesson.completed;
+        setUnlockedSteps([
+          true, 
+          isComplete || !!parsed.exercise, 
+          isComplete || !!parsed.challenge, 
+          true, 
+          isComplete
+        ]);
+
+        // Extract practice FEN (last reference board or default)
         const boardMatches = [...fetchedLesson.content.matchAll(/\[BOARD:([^\]]+)\]/g)];
         if (boardMatches.length > 0) {
           const lastFen = boardMatches[boardMatches.length - 1][1];
@@ -475,16 +778,23 @@ export const LessonDetails: React.FC = () => {
           setPracticeFen('start');
         }
 
+        // Fetch progress and game list to calculate Level/XP
+        const [progressData, gamesData] = await Promise.all([
+          lessonService.getProgress(),
+          gameService.getGames()
+        ]);
+        setCompletedLessonsCount(progressData.completedCount);
+        setStreak(progressData.streak);
+        setGamesCount(gamesData.length);
+
         // Fetch all lessons to compute the next lesson in sequence
         const allLessons = await lessonService.getLessons();
         const currentIndex = allLessons.findIndex(l => l.slug === slug);
         if (currentIndex !== -1 && currentIndex < allLessons.length - 1) {
           setNextLesson(allLessons[currentIndex + 1]);
         } else {
-          // If it's the last, look for first incomplete
-          const progress = await lessonService.getProgress();
-          if (progress.remainingLessons.length > 0 && progress.remainingLessons[0].slug !== slug) {
-            setNextLesson(progress.remainingLessons[0]);
+          if (progressData.remainingLessons.length > 0 && progressData.remainingLessons[0].slug !== slug) {
+            setNextLesson(progressData.remainingLessons[0]);
           } else {
             setNextLesson(null);
           }
@@ -500,11 +810,50 @@ export const LessonDetails: React.FC = () => {
     loadLessonData();
   }, [slug]);
 
-  const handleComplete = async () => {
-    if (!slug || !lesson) return;
-    await lessonService.completeLesson(slug);
-    // Reload state
-    setLesson({ ...lesson, completed: true });
+  // Scroll to top on step transition
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentStep]);
+
+  const handleExerciseSuccess = () => {
+    const updated = [...unlockedSteps];
+    updated[2] = true; // Unlock challenge
+    setUnlockedSteps(updated);
+  };
+
+  const handleChallengeSuccess = async () => {
+    const updated = [...unlockedSteps];
+    updated[3] = true; // Unlock Sandbox
+    updated[4] = true; // Unlock Completion
+    setUnlockedSteps(updated);
+
+    if (!lesson?.completed && slug) {
+      try {
+        await lessonService.completeLesson(slug);
+        
+        // Save today's completion state to track daily goals accurately in localStorage
+        const todayStr = new Date().toDateString();
+        const completedToday = JSON.parse(localStorage.getItem('completed_lessons_today') || '[]');
+        if (!completedToday.includes(todayStr)) {
+          completedToday.push(todayStr);
+          localStorage.setItem('completed_lessons_today', JSON.stringify(completedToday));
+        }
+
+        // Increment count for completion screen
+        setCompletedLessonsCount(prev => prev + 1);
+        setLesson(prev => prev ? { ...prev, completed: true } : null);
+      } catch (e) {
+        console.error('Error completing lesson', e);
+      }
+    }
+  };
+
+
+
+  const jumpToStep = (index: number) => {
+    if (unlockedSteps[index]) {
+      setCurrentStep(index);
+    }
   };
 
   if (isLoading) {
@@ -533,28 +882,187 @@ export const LessonDetails: React.FC = () => {
     );
   }
 
+  // Set up wizard steps definition based on exercises loaded
+  const STEPS = [
+    { label: 'Theory', icon: BookOpen },
+    { label: 'Exercise', icon: Play, exists: !!exercise },
+    { label: 'Challenge', icon: Trophy, exists: !!challenge },
+    { label: 'Sandbox', icon: RotateCcw },
+    { label: 'Complete', icon: Award }
+  ].filter(s => s.exists !== false);
+
+  // Map wizard step layout back to index
+  const activeWizardStepIndex = STEPS.findIndex((s) => {
+    if (currentStep === 0) return s.label === 'Theory';
+    if (currentStep === 1) return s.label === 'Exercise';
+    if (currentStep === 2) return s.label === 'Challenge';
+    if (currentStep === 3) return s.label === 'Sandbox';
+    return s.label === 'Complete';
+  });
+
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-8 pb-16 animate-fade-in">
+      <div ref={topRef} className="max-w-2xl mx-auto space-y-8 pb-16 animate-fade-in">
         <LessonHeader 
           lesson={lesson} 
           onBack={() => navigate('/academy')} 
         />
-        
-        {/* Core Content */}
-        <LessonContent content={lesson.content} lessonTitle={lesson.title} />
-        
-        {/* Key Takeaways */}
-        <KeyTakeaways content={lesson.content} />
-        
-        {/* Footer, Interactive Board and Actions */}
-        <LessonFooter
-          isCompleted={lesson.completed}
-          onComplete={handleComplete}
-          nextLesson={nextLesson}
-          practiceFen={practiceFen}
-          lessonTitle={lesson.title}
-        />
+
+        {/* Step-by-Step progress timeline */}
+        {currentStep < 4 && (
+          <div className="relative flex items-center justify-between w-full max-w-md mx-auto pt-2 pb-6 px-1">
+            {/* Timeline connection lines */}
+            <div className="absolute left-4 right-4 top-[18px] h-[1px] bg-white/5 z-0" />
+            <div 
+              className="absolute left-4 top-[18px] h-[1px] bg-brand-accent transition-all duration-500 z-0" 
+              style={{ width: `${(activeWizardStepIndex / (STEPS.length - 1)) * 92}%` }}
+            />
+
+            {STEPS.map((s) => {
+              const stepTargetIdx = s.label === 'Theory' ? 0 : (s.label === 'Exercise' ? 1 : (s.label === 'Challenge' ? 2 : (s.label === 'Sandbox' ? 3 : 4)));
+              const isStepUnlocked = unlockedSteps[stepTargetIdx];
+              const isStepActive = currentStep === stepTargetIdx;
+              const isStepComplete = isStepUnlocked && currentStep > stepTargetIdx;
+              const Icon = s.icon;
+
+              return (
+                <button
+                  key={s.label}
+                  disabled={!isStepUnlocked}
+                  onClick={() => jumpToStep(stepTargetIdx)}
+                  className="relative z-10 flex flex-col items-center group cursor-pointer focus:outline-none disabled:cursor-not-allowed"
+                >
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center border transition-all duration-300 ${
+                    isStepActive 
+                      ? 'bg-brand-accent/15 border-brand-accent text-brand-accent shadow-[0_0_12px_rgba(139,92,246,0.3)] ring-4 ring-brand-accent/10'
+                      : isStepComplete
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                        : isStepUnlocked
+                          ? 'bg-zinc-950 border-white/10 text-zinc-350 hover:border-white/20'
+                          : 'bg-zinc-950 border-white/5 text-zinc-700'
+                  }`}>
+                    {isStepComplete ? (
+                      <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                    ) : (
+                      <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    )}
+                  </div>
+                  <span className={`text-[8px] font-bold uppercase tracking-widest mt-1.5 transition-colors ${
+                    isStepActive 
+                      ? 'text-brand-accent' 
+                      : isStepComplete
+                        ? 'text-emerald-400' 
+                        : isStepUnlocked
+                          ? 'text-zinc-500 group-hover:text-zinc-300'
+                          : 'text-zinc-750'
+                  }`}>
+                    {s.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Wizard Step Render */}
+        <div className="transition-all duration-300 ease-in-out">
+          {currentStep === 0 && (
+            <div className="space-y-8 animate-fade-in text-left">
+              {/* Theory Content */}
+              <LessonContent content={theoryContent} lessonTitle={lesson.title} />
+
+              <div className="pt-6 border-t border-white/5 flex justify-end">
+                {exercise ? (
+                  <Button onClick={() => jumpToStep(1)} className="bg-white text-zinc-950 hover:bg-zinc-250 font-bold px-6">
+                    Start Exercise
+                    <ChevronRight className="ml-2 w-4 h-4" />
+                  </Button>
+                ) : challenge ? (
+                  <Button onClick={() => jumpToStep(2)} className="bg-white text-zinc-950 hover:bg-zinc-250 font-bold px-6">
+                    Start Challenge
+                    <ChevronRight className="ml-2 w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button onClick={() => jumpToStep(3)} className="bg-white text-zinc-950 hover:bg-zinc-250 font-bold px-6">
+                    Open Sandbox
+                    <ChevronRight className="ml-2 w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 1 && exercise && (
+            <div className="animate-fade-in space-y-6">
+              <ExerciseView 
+                exercise={exercise} 
+                isChallenge={false} 
+                onSuccess={handleExerciseSuccess} 
+              />
+              <div className="pt-6 border-t border-white/5 flex justify-between">
+                <Button variant="ghost" onClick={() => jumpToStep(0)} className="text-zinc-400 hover:text-white px-0 hover:bg-transparent">
+                  Back to Theory
+                </Button>
+                <Button 
+                  disabled={!unlockedSteps[2]}
+                  onClick={() => jumpToStep(challenge ? 2 : 3)}
+                  className="bg-white text-zinc-950 hover:bg-zinc-250 font-bold px-6 disabled:opacity-40 disabled:hover:bg-white"
+                >
+                  Next Challenge
+                  <ChevronRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 2 && challenge && (
+            <div className="animate-fade-in space-y-6">
+              <ExerciseView 
+                exercise={challenge} 
+                isChallenge={true} 
+                onSuccess={handleChallengeSuccess} 
+              />
+              <div className="pt-6 border-t border-white/5 flex justify-between">
+                <Button variant="ghost" onClick={() => jumpToStep(exercise ? 1 : 0)} className="text-zinc-400 hover:text-white px-0 hover:bg-transparent">
+                  Back
+                </Button>
+                <Button 
+                  disabled={!unlockedSteps[3]}
+                  onClick={() => jumpToStep(3)}
+                  className="bg-white text-zinc-950 hover:bg-zinc-250 font-bold px-6 disabled:opacity-40 disabled:hover:bg-white"
+                >
+                  Analyze Position
+                  <ChevronRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="animate-fade-in">
+              <PracticeSandbox 
+                practiceFen={practiceFen} 
+                onNext={() => jumpToStep(4)} 
+              />
+            </div>
+          )}
+
+          {currentStep === 4 && (
+            <div className="animate-fade-in py-6">
+              <LessonCompleteView
+                lessonTitle={lesson.title}
+                nextLesson={nextLesson}
+                onNextLesson={() => {
+                  if (nextLesson) navigate(`/academy/${nextLesson.slug}`);
+                }}
+                onBack={() => navigate('/academy')}
+                completedLessonsCount={completedLessonsCount}
+                gamesCount={gamesCount}
+                streak={streak}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
