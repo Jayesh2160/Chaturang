@@ -384,7 +384,7 @@ export const Dashboard: React.FC = () => {
 
             {/* Mini Chessboard */}
             <div className="flex justify-center my-1.5">
-              <div className="w-36 h-36 rounded-lg overflow-hidden border border-white/10 bg-zinc-950 p-1">
+              <div className="w-56 h-56 rounded-lg overflow-hidden border border-white/10 bg-zinc-950 p-1">
                 <Chessboard 
                   options={{
                     position: puzzleBoardFen,

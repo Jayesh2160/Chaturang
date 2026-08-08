@@ -170,7 +170,7 @@ const ChessBoardRenderer: React.FC<ChessBoardRendererProps> = ({ fen, lessonTitl
 
   return (
     <div className="my-8 flex justify-center">
-      <div className="w-full max-w-[280px] sm:max-w-[320px] aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-zinc-950 p-2">
+      <div className="w-full max-w-[340px] sm:max-w-[480px] aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-zinc-950 p-2">
         <Chessboard 
           options={{ 
             position: fen,
@@ -394,7 +394,7 @@ const ExerciseView: React.FC<ExerciseViewProps> = ({ exercise, isChallenge, onSu
   };
 
   return (
-    <div className="space-y-6 text-left max-w-md mx-auto">
+    <div className="space-y-6 text-left max-w-xl mx-auto">
       <div className="space-y-2">
         <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-brand-accent/10 text-brand-accent border border-brand-accent/15">
           {isChallenge ? 'Mini Challenge' : 'Board Exercise'}
@@ -414,7 +414,7 @@ const ExerciseView: React.FC<ExerciseViewProps> = ({ exercise, isChallenge, onSu
         </Card>
       ) : (
         <Card className="p-6 bg-zinc-950/20 border-white/5 rounded-2xl shadow-lg flex flex-col items-center">
-          <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-6 bg-zinc-950 p-1.5">
+          <div className="w-full max-w-[340px] sm:max-w-[480px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-6 bg-zinc-950 p-1.5">
             <Chessboard 
               options={{
                 position: boardFen,
@@ -525,7 +525,7 @@ const PracticeSandbox: React.FC<PracticeSandboxProps> = ({ practiceFen, onNext }
   };
 
   return (
-    <div className="space-y-6 text-left max-w-md mx-auto">
+    <div className="space-y-6 text-left max-w-xl mx-auto">
       <div className="space-y-1">
         <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-brand-accent/10 text-brand-accent border border-brand-accent/15">
           Practice Position
@@ -545,7 +545,7 @@ const PracticeSandbox: React.FC<PracticeSandboxProps> = ({ practiceFen, onNext }
         </Card>
       ) : (
         <Card className="p-6 bg-zinc-950/20 border-white/5 rounded-2xl shadow-lg flex flex-col items-center">
-          <div className="w-full max-w-[280px] sm:max-w-[300px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-6 bg-zinc-950 p-1.5">
+          <div className="w-full max-w-[340px] sm:max-w-[480px] aspect-square rounded-xl overflow-hidden border border-white/10 shadow-md mb-6 bg-zinc-950 p-1.5">
             <Chessboard 
               options={{
                 position: boardFen,
@@ -862,7 +862,7 @@ export const LessonDetails: React.FC = () => {
         <div className="max-w-2xl mx-auto space-y-8 text-left animate-pulse py-6">
           <div className="h-4 w-32 bg-zinc-900 rounded" />
           <div className="h-10 w-2/3 bg-zinc-900 rounded" />
-          <div className="h-[250px] w-full bg-zinc-950/40 rounded-2xl border border-white/5" />
+          <div className="h-[340px] sm:h-[480px] w-full max-w-[340px] sm:max-w-[480px] mx-auto bg-zinc-950/40 rounded-2xl border border-white/5" />
           <div className="h-6 w-48 bg-zinc-900 rounded" />
         </div>
       </Layout>
