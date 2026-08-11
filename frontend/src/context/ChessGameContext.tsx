@@ -93,7 +93,8 @@ interface ChessGameContextType {
   setIsPreGameModalOpen: (v: boolean) => void;
   isResultModalOpen: boolean;
   setIsResultModalOpen: (v: boolean) => void;
-  timeoutResult: GameResult | null;
+  customResult: GameResult | null;
+  resignGame: (resigningColor?: PlayerColor) => void;
 
   // Computer Engine Addition
   isComputerThinking: boolean;
@@ -177,7 +178,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Modals state
   const [isPreGameModalOpen, setIsPreGameModalOpen] = useState<boolean>(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState<boolean>(false);
-  const [timeoutResult, setTimeoutResult] = useState<GameResult | null>(null);
+  const [customResult, setCustomResult] = useState<GameResult | null>(null);
 
   // Resolved user starting color state
   const [resolvedUserColor, setResolvedUserColor] = useState<'w' | 'b'>(() => {
@@ -238,7 +239,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         title: `${winnerColor === 'w' ? 'White' : 'Black'} Wins!`,
         subtitle: 'On Time (Timeout)',
       };
-      setTimeoutResult(res);
+      setCustomResult(res);
       setIsResultModalOpen(true);
       sounds.playEndSound();
     },
@@ -252,6 +253,27 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     onTimeout: handleTimeout,
     onLowTimeTick: sounds.playLowTimeTick,
   });
+
+  // Resign Callback
+  const resignGame = useCallback(
+    (resigningColor?: PlayerColor) => {
+      const colorToResign = resigningColor || (gameSetupOptions.gameMode === 'COMPUTER' ? resolvedUserColor : engine.turn);
+      const winnerColor = colorToResign === 'w' ? 'b' : 'w';
+
+      const res: GameResult = {
+        type: GameResultType.RESIGNATION,
+        winner: winnerColor,
+        title: `${winnerColor === 'w' ? 'White' : 'Black'} Wins!`,
+        subtitle: `By Resignation (${colorToResign === 'w' ? 'White' : 'Black'} Resigned)`,
+      };
+
+      setCustomResult(res);
+      clock.pauseClock();
+      sounds.playEndSound();
+      setIsResultModalOpen(true);
+    },
+    [gameSetupOptions.gameMode, resolvedUserColor, engine.turn, clock, sounds]
+  );
 
   // Board Orientation Hook
   const orientation = useBoardOrientation(
@@ -327,6 +349,9 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Execute Move wrapper with sounds, clock switch, auto-flip, and premove handling
   const handleMakeMove = useCallback(
     (from: Square, to: Square, promotionPiece?: any, isComputerCall = false) => {
+      if (engine.isGameOver || customResult) {
+        return null;
+      }
       if (!isComputerCall) {
         // Check if it's user's turn
         const currentTurn = engine.turn;
@@ -344,7 +369,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       return executeMoveInternal(from, to, promotionPiece);
     },
-    [engine.turn, gameSetupOptions.gameMode, resolvedUserColor, executeMoveInternal, premoveHook]
+    [engine.isGameOver, customResult, engine.turn, gameSetupOptions.gameMode, resolvedUserColor, executeMoveInternal, premoveHook]
   );
 
   // Change Clock Preset
@@ -405,7 +430,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Trigger evaluation on every move when gameMode is COMPUTER
   useEffect(() => {
-    if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || timeoutResult) return;
+    if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || customResult) return;
 
     const getEval = async () => {
       try {
@@ -418,11 +443,11 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     };
     getEval();
-  }, [engine.fen, gameSetupOptions.gameMode, engine.isGameOver, timeoutResult]);
+  }, [engine.fen, gameSetupOptions.gameMode, engine.isGameOver, customResult]);
 
   // Trigger Computer/Stockfish move when it's computer's turn
   useEffect(() => {
-    if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || timeoutResult || isComputerThinking) return;
+    if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || customResult || isComputerThinking) return;
 
     const currentTurn = engine.turn; // 'w' or 'b'
     const computerColor = resolvedUserColor === 'w' ? 'b' : 'w';
@@ -472,7 +497,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     gameSetupOptions.difficulty,
     resolvedUserColor,
     engine.isGameOver,
-    timeoutResult,
+    customResult,
     isComputerThinking,
   ]);
 
@@ -497,7 +522,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     resetGame: (newFen?: string) => {
       engine.resetGame(newFen);
       clock.resetClock(activePreset.baseMinutes, activePreset.incrementSeconds);
-      setTimeoutResult(null);
+      setCustomResult(null);
       setIsResultModalOpen(false);
       premoveHook.clearPremove();
       setEvaluation('0.00');
@@ -553,7 +578,8 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsPreGameModalOpen,
     isResultModalOpen,
     setIsResultModalOpen,
-    timeoutResult,
+    customResult,
+    resignGame,
 
     // Computer states
     isComputerThinking,

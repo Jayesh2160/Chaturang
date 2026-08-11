@@ -10,6 +10,7 @@ import {
   Settings2,
   MousePointerClick,
   Check,
+  Flag,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { BOARD_THEMES } from '../../utils/boardThemes';
@@ -27,8 +28,10 @@ interface BoardControlsProps {
   onOpenPresetModal: () => void;
   onResetGame: () => void;
   onSaveGame: () => void;
+  onResign: () => void;
   activePresetName: string;
   moveCount: number;
+  isGameOver: boolean;
 }
 
 export const BoardControls: React.FC<BoardControlsProps> = React.memo(
@@ -45,8 +48,10 @@ export const BoardControls: React.FC<BoardControlsProps> = React.memo(
     onOpenPresetModal,
     onResetGame,
     onSaveGame,
+    onResign,
     activePresetName,
     moveCount,
+    isGameOver,
   }) => {
     const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
@@ -169,24 +174,36 @@ export const BoardControls: React.FC<BoardControlsProps> = React.memo(
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 pt-1">
-          <Button
-            variant="outline"
-            onClick={onResetGame}
-            className="flex-1 py-2 h-9 text-xs text-zinc-400 hover:text-white"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset Match
-          </Button>
+        <div className="flex flex-col gap-2 pt-1">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={onResetGame}
+              className="flex-1 py-2 h-9 text-xs text-zinc-400 hover:text-white"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset Match
+            </Button>
+
+            <Button
+              variant="primary"
+              onClick={onSaveGame}
+              disabled={moveCount === 0}
+              className="flex-1 py-2 h-9 text-xs"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Save Match
+            </Button>
+          </div>
 
           <Button
-            variant="primary"
-            onClick={onSaveGame}
-            disabled={moveCount === 0}
-            className="flex-1 py-2 h-9 text-xs"
+            variant="danger"
+            onClick={onResign}
+            disabled={isGameOver || moveCount === 0}
+            className="w-full py-2 h-9 text-xs flex items-center justify-center gap-2"
           >
-            <Save className="w-3.5 h-3.5" />
-            Save Match
+            <Flag className="w-3.5 h-3.5" />
+            Resign Match
           </Button>
         </div>
       </div>

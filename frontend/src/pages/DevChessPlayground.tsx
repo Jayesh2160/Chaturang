@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Square, PieceSymbol } from 'chess.js';
 import { gameService } from '../services/gameServiceFactory';
 import { CHESS_UI } from '../constants/chessUI';
@@ -176,7 +176,8 @@ const DevChessContent: React.FC = () => {
     setIsPreGameModalOpen,
     isResultModalOpen,
     setIsResultModalOpen,
-    timeoutResult,
+    customResult,
+    resignGame,
   } = useChessGameContext();
 
   const [isClockModalOpen, setIsClockModalOpen] = useState(false);
@@ -198,6 +199,7 @@ const DevChessContent: React.FC = () => {
   };
 
   const handleSquareClick = (square: Square) => {
+    if (activeResult) return;
     if (selectedSquare) {
       if (selectedSquare === square) {
         setSelectedSquare(null);
@@ -221,14 +223,16 @@ const DevChessContent: React.FC = () => {
   };
 
   const handlePieceDrop = (sourceSquare: Square, targetSquare: Square): boolean => {
+    if (activeResult) return false;
     const move = makeMove(sourceSquare, targetSquare);
     return !!move;
   };
 
   const handleOpenSaveModal = () => {
-    if (gameResult) {
+    const activeResult = gameResult || customResult;
+    if (activeResult) {
       setCustomResultInput(
-        gameResult.winner === 'w' ? 'WHITE_WIN' : gameResult.winner === 'b' ? 'BLACK_WIN' : 'DRAW'
+        activeResult.winner === 'w' ? 'WHITE_WIN' : activeResult.winner === 'b' ? 'BLACK_WIN' : 'DRAW'
       );
     } else {
       setCustomResultInput('IN_PROGRESS');
@@ -237,6 +241,12 @@ const DevChessContent: React.FC = () => {
     setSaveSuccess(false);
     setSaveError('');
     setIsSaveModalOpen(true);
+  };
+
+  const handleResign = () => {
+    if (window.confirm('Are you sure you want to resign the match?')) {
+      resignGame();
+    }
   };
 
   const handleSaveGameSubmit = async (e: React.FormEvent) => {
@@ -275,7 +285,7 @@ const DevChessContent: React.FC = () => {
   const bottomCaptured = bottomPlayer.color === 'w' ? capturedState.whiteCaptured : capturedState.blackCaptured;
   const topScore = topPlayer.color === 'w' ? capturedState.whiteScore : capturedState.blackScore;
   const bottomScore = bottomPlayer.color === 'w' ? capturedState.whiteScore : capturedState.blackScore;
-  const activeResult = gameResult || timeoutResult;
+  const activeResult = gameResult || customResult;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -336,8 +346,10 @@ const DevChessContent: React.FC = () => {
                 if (window.confirm('Reset to starting position?')) resetGame();
               }}
               onSaveGame={handleOpenSaveModal}
+              onResign={handleResign}
               activePresetName={activePreset.name}
               moveCount={history.length}
+              isGameOver={!!activeResult}
             />
           </div>
 

@@ -80,7 +80,8 @@ const PlayGameContent: React.FC = () => {
     setIsPreGameModalOpen,
     isResultModalOpen,
     setIsResultModalOpen,
-    timeoutResult,
+    customResult,
+    resignGame,
 
     // Computer states
     isComputerThinking,
@@ -99,7 +100,7 @@ const PlayGameContent: React.FC = () => {
 
   // Square Click Handler (Click-to-Move)
   const handleSquareClick = (square: Square) => {
-    if (isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
+    if (activeResult || isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
       return;
     }
     // If piece selected, attempt move
@@ -129,7 +130,7 @@ const PlayGameContent: React.FC = () => {
 
   // Piece Drop Handler (Drag-and-Drop)
   const handlePieceDrop = (sourceSquare: Square, targetSquare: Square): boolean => {
-    if (isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
+    if (activeResult || isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
       return false;
     }
     const move = makeMove(sourceSquare, targetSquare);
@@ -141,19 +142,28 @@ const PlayGameContent: React.FC = () => {
 
   // Open Save Modal
   const handleOpenSaveModal = () => {
-    if (gameResult) {
+    const activeResult = gameResult || customResult;
+    if (activeResult) {
       setCustomResultInput(
-        gameResult.winner === 'w'
+        activeResult.winner === 'w'
           ? 'WHITE_WIN'
-          : gameResult.winner === 'b'
+          : activeResult.winner === 'b'
           ? 'BLACK_WIN'
-          : 'DRAW'
+          : activeResult.winner === 'draw'
+          ? 'DRAW'
+          : 'IN_PROGRESS'
       );
     } else {
       setCustomResultInput('IN_PROGRESS');
     }
     setOpponentNameInput(opponentPlayer.name);
     setIsSaveModalOpen(true);
+  };
+
+  const handleResign = () => {
+    if (window.confirm('Are you sure you want to resign the match?')) {
+      resignGame();
+    }
   };
 
   // Submit Save Game
@@ -202,7 +212,7 @@ const PlayGameContent: React.FC = () => {
   const topScore = topPlayer.color === 'w' ? capturedState.whiteScore : capturedState.blackScore;
   const bottomScore = bottomPlayer.color === 'w' ? capturedState.whiteScore : capturedState.blackScore;
 
-  const activeResult = gameResult || timeoutResult;
+  const activeResult = gameResult || customResult;
 
   return (
     <div className="space-y-6 animate-fade-in text-left">
@@ -255,8 +265,10 @@ const PlayGameContent: React.FC = () => {
               }
             }}
             onSaveGame={handleOpenSaveModal}
+            onResign={handleResign}
             activePresetName={activePreset.name}
             moveCount={history.length}
+            isGameOver={!!activeResult}
           />
         </div>
 
@@ -288,7 +300,7 @@ const PlayGameContent: React.FC = () => {
           />
 
           {/* Computer engine status banner */}
-          {(isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && !gameResult && !timeoutResult)) && (
+          {(isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && !activeResult)) && (
             <div className="w-full space-y-2 text-left animate-fade-in">
               {isComputerThinking && (
                 <div className="flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs px-4 py-2.5 rounded-xl font-medium animate-pulse">
@@ -301,7 +313,7 @@ const PlayGameContent: React.FC = () => {
                   </span>
                 </div>
               )}
-              {gameSetupOptions.gameMode === 'COMPUTER' && !isComputerThinking && !gameResult && !timeoutResult && (
+              {gameSetupOptions.gameMode === 'COMPUTER' && !isComputerThinking && !activeResult && (
                 <div className="flex items-center justify-between bg-zinc-900/60 border border-white/5 text-zinc-400 text-xs px-4 py-2 rounded-xl font-medium">
                   <span>Engine Evaluation:</span>
                   <span className={`font-mono font-bold ${
