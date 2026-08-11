@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { Square, PieceSymbol } from 'chess.js';
 import { gameService } from '../services/gameServiceFactory';
 import { CHESS_UI } from '../constants/chessUI';
