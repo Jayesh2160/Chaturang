@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { gameService } from '../services/gameService';
+import { gameService } from '../services/gameServiceFactory';
 import type { GameResponse } from '../services/gameService';
 import { 
   Calendar, 
@@ -16,10 +17,12 @@ import {
   ChevronsRight,
   Clock,
   User,
-  Info
+  Info,
+  Sparkles
 } from 'lucide-react';
 
 export const MyGames: React.FC = () => {
+  const navigate = useNavigate();
   const [games, setGames] = useState<GameResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -341,6 +344,16 @@ export const MyGames: React.FC = () => {
                     <span>Recorded:</span>
                     <span className="text-zinc-200">{formatDate(selectedGame.createdAt)}</span>
                   </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/5">
+                  <Button 
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold py-2 px-4 rounded-xl shadow-lg shadow-violet-500/10 hover:shadow-violet-500/20 transition-all border border-violet-500/20 cursor-pointer"
+                    onClick={() => navigate(`/my-games/${selectedGame.id}/analysis`)}
+                  >
+                    <Sparkles className="w-4 h-4 text-violet-200 animate-pulse" strokeWidth={1.5} />
+                    Analyze with Stockfish
+                  </Button>
                 </div>
               </Card>
 

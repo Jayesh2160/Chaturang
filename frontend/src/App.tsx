@@ -7,6 +7,7 @@ import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { PlayGame } from './pages/PlayGame';
 import { MyGames } from './pages/MyGames';
+import { GameAnalysis } from './pages/GameAnalysis';
 import { Academy } from './pages/Academy';
 import { AcademyProgress } from './pages/AcademyProgress';
 import { LessonDetails } from './pages/LessonDetails';
@@ -108,6 +109,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MyGames />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-games/:id/analysis"
+            element={
+              <ProtectedRoute>
+                <GameAnalysis />
               </ProtectedRoute>
             }
           />

@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class EvaluationResponse {
     private String evaluation;
     private String principalVariation;
+    private String bestMove;
 }

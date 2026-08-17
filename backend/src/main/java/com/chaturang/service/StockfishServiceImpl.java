@@ -155,6 +155,7 @@ public class StockfishServiceImpl implements StockfishService {
             String line;
             String lastScore = "0.00";
             String lastPv = "";
+            String bestMove = null;
             while ((line = reader.readLine()) != null) {
                 log.debug("Stockfish stdout: {}", line);
                 if (line.startsWith("info") && line.contains("score")) {
@@ -168,12 +169,17 @@ public class StockfishServiceImpl implements StockfishService {
                     }
                 }
                 if (line.startsWith("bestmove")) {
+                    String[] parts = line.split("\\s+");
+                    if (parts.length >= 2) {
+                        bestMove = parts[1];
+                    }
                     break;
                 }
             }
             return EvaluationResponse.builder()
                     .evaluation(lastScore)
                     .principalVariation(lastPv)
+                    .bestMove(bestMove)
                     .build();
         } catch (IOException e) {
             log.error("IO Error communicating with Stockfish for evaluation, restarting engine...", e);

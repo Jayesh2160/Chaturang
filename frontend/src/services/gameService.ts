@@ -25,6 +25,32 @@ export interface GameResponse {
 }
 
 
+export interface MoveAnalysis {
+  moveIndex: number;
+  san: string;
+  uci: string;
+  color: string;
+  evaluation: string;
+  bestMove: string;
+  classification: 'BEST' | 'EXCELLENT' | 'GOOD' | 'INACCURACY' | 'MISTAKE' | 'BLUNDER';
+  comment: string;
+}
+
+export interface GameAnalysisResponse {
+  id: number;
+  gameId: number;
+  accuracy: number; // Game Accuracy
+  blunderCount: number;
+  mistakeCount: number;
+  inaccuracyCount: number;
+  bestMoveCount: number;
+  excellentMoveCount: number;
+  goodMoveCount: number;
+  summary: string;
+  moveAnalyses: MoveAnalysis[];
+  createdAt: string;
+}
+
 export const gameService = {
   saveGame: async (data: GameSaveRequest): Promise<GameResponse> => {
     const response = await api.post<GameResponse>('/api/games', data);
@@ -43,5 +69,15 @@ export const gameService = {
 
   deleteGame: async (id: number): Promise<void> => {
     await api.delete(`/api/games/${id}`);
+  },
+
+  analyzeGame: async (id: number, fens: string[], moves: any[]): Promise<GameAnalysisResponse> => {
+    const response = await api.post<GameAnalysisResponse>(`/api/games/${id}/analysis`, { fens, moves });
+    return response.data;
+  },
+
+  getGameAnalysis: async (id: number): Promise<GameAnalysisResponse> => {
+    const response = await api.get<GameAnalysisResponse>(`/api/games/${id}/analysis`);
+    return response.data;
   },
 };
