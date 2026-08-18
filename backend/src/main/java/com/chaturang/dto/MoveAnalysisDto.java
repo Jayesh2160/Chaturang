@@ -18,4 +18,5 @@ public class MoveAnalysisDto {
     private String bestMove; // Stockfish's best move in UCI format from the position before this move
     private String classification; // "BEST", "EXCELLENT", "GOOD", "INACCURACY", "MISTAKE", "BLUNDER"
     private String comment; // e.g. "Best move in this position." or "Blunder: missed Qxd5"
+    private String weaknessPattern; // e.g. "FORK", "PIN", "SKEWER", "HANGING_PIECE", "BACK_RANK", "KING_SAFETY", "OPENING", "ENDGAME"
 }

@@ -36,4 +36,11 @@ public class GameAnalysisController {
         GameAnalysisResponse response = gameAnalysisService.getGameAnalysis(id, userDetails.getUser());
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/weakness-profile")
+    public ResponseEntity<com.chaturang.dto.WeaknessProfileResponse> getWeaknessProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        com.chaturang.dto.WeaknessProfileResponse response = gameAnalysisService.getWeaknessProfile(userDetails.getUser());
+        return ResponseEntity.ok(response);
+    }
 }

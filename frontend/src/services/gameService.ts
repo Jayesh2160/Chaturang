@@ -34,6 +34,7 @@ export interface MoveAnalysis {
   bestMove: string;
   classification: 'BEST' | 'EXCELLENT' | 'GOOD' | 'INACCURACY' | 'MISTAKE' | 'BLUNDER';
   comment: string;
+  weaknessPattern?: string;
 }
 
 export interface GameAnalysisResponse {
@@ -49,6 +50,21 @@ export interface GameAnalysisResponse {
   summary: string;
   moveAnalyses: MoveAnalysis[];
   createdAt: string;
+}
+
+export interface WeaknessProfileResponse {
+  status: 'NOT_ENOUGH_DATA' | 'EARLY_INSIGHTS' | 'FULL_PROFILE';
+  analyzedGamesCount: number;
+  biggestWeakness: string | null;
+  category: string | null;
+  description: string | null;
+  gamesAffected: number | null;
+  totalOccurrences: number | null;
+  patternOccurrences: Record<string, number> | null;
+  recommendedLessonTitle: string | null;
+  recommendedLessonSlug: string | null;
+  recommendedLessonCategory: string | null;
+  recommendedLessonShortDescription: string | null;
 }
 
 export const gameService = {
@@ -78,6 +94,11 @@ export const gameService = {
 
   getGameAnalysis: async (id: number): Promise<GameAnalysisResponse> => {
     const response = await api.get<GameAnalysisResponse>(`/api/games/${id}/analysis`);
+    return response.data;
+  },
+
+  getWeaknessProfile: async (): Promise<WeaknessProfileResponse> => {
+    const response = await api.get<WeaknessProfileResponse>('/api/games/weakness-profile');
     return response.data;
   },
 };

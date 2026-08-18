@@ -7,6 +7,7 @@ import com.chaturang.entity.User;
 import com.chaturang.exception.ResourceNotFoundException;
 import com.chaturang.repository.GameAnalysisRepository;
 import com.chaturang.repository.GameRepository;
+import com.chaturang.repository.LessonRepository;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -27,16 +28,19 @@ public class GameAnalysisServiceImpl implements GameAnalysisService {
     private final GameAnalysisRepository gameAnalysisRepository;
     private final StockfishService stockfishService;
     private final ObjectMapper objectMapper;
+    private final LessonRepository lessonRepository;
 
     public GameAnalysisServiceImpl(
             GameRepository gameRepository,
             GameAnalysisRepository gameAnalysisRepository,
             StockfishService stockfishService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            LessonRepository lessonRepository) {
         this.gameRepository = gameRepository;
         this.gameAnalysisRepository = gameAnalysisRepository;
         this.stockfishService = stockfishService;
         this.objectMapper = objectMapper;
+        this.lessonRepository = lessonRepository;
     }
 
     @Override
@@ -138,6 +142,12 @@ public class GameAnalysisServiceImpl implements GameAnalysisService {
                 blunderCount++;
             }
 
+            String weaknessPattern = null;
+            if ("MISTAKE".equals(classification) || "BLUNDER".equals(classification)) {
+                String fenBefore = fens.get(i);
+                weaknessPattern = ChessPatternDetector.detectPattern(fenBefore, uciPlayed, uciBest, i);
+            }
+
             MoveAnalysisDto moveAnalysis = MoveAnalysisDto.builder()
                     .moveIndex(i)
                     .san(moveReq.getSan())
@@ -147,6 +157,7 @@ public class GameAnalysisServiceImpl implements GameAnalysisService {
                     .bestMove(uciBest)
                     .classification(classification)
                     .comment(comment)
+                    .weaknessPattern(weaknessPattern)
                     .build();
 
             moveAnalyses.add(moveAnalysis);
@@ -291,5 +302,158 @@ public class GameAnalysisServiceImpl implements GameAnalysisService {
                 .moveAnalyses(moveAnalysesList)
                 .createdAt(ga.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WeaknessProfileResponse getWeaknessProfile(User user) {
+        org.springframework.data.domain.Pageable limit8 = org.springframework.data.domain.PageRequest.of(0, 8);
+        List<GameAnalysis> analyses = gameAnalysisRepository.findRecentByUser(user, limit8);
+
+        int analyzedCount = analyses.size();
+
+        WeaknessProfileResponse.WeaknessProfileResponseBuilder builder = WeaknessProfileResponse.builder()
+                .analyzedGamesCount(analyzedCount);
+
+        if (analyzedCount <= 2) {
+            builder.status("NOT_ENOUGH_DATA");
+            return builder.build();
+        } else if (analyzedCount <= 4) {
+            builder.status("EARLY_INSIGHTS");
+        } else {
+            builder.status("FULL_PROFILE");
+        }
+
+        java.util.Map<String, Integer> patternOccurrences = new java.util.HashMap<>();
+        java.util.Map<String, java.util.Set<Long>> gamesWithPattern = new java.util.HashMap<>();
+
+        String[] allPatterns = {"FORK", "PIN", "SKEWER", "HANGING_PIECE", "BACK_RANK", "KING_SAFETY", "OPENING", "ENDGAME"};
+        for (String pat : allPatterns) {
+            patternOccurrences.put(pat, 0);
+            gamesWithPattern.put(pat, new java.util.HashSet<>());
+        }
+
+        for (GameAnalysis ga : analyses) {
+            Long gameId = ga.getGame().getId();
+            List<MoveAnalysisDto> moveAnalysesList = new ArrayList<>();
+            try {
+                if (ga.getMoveAnalyses() != null && !ga.getMoveAnalyses().isEmpty()) {
+                    moveAnalysesList = objectMapper.readValue(
+                            ga.getMoveAnalyses(),
+                            new TypeReference<List<MoveAnalysisDto>>() {}
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Failed to deserialize move analyses JSON", e);
+            }
+
+            for (MoveAnalysisDto move : moveAnalysesList) {
+                String pattern = move.getWeaknessPattern();
+                if (pattern != null && patternOccurrences.containsKey(pattern)) {
+                    patternOccurrences.put(pattern, patternOccurrences.get(pattern) + 1);
+                    gamesWithPattern.get(pattern).add(gameId);
+                }
+            }
+        }
+
+        String biggestPat = null;
+        double maxScore = -1.0;
+        int biggestPatGamesAffected = 0;
+        int biggestPatOccurrences = 0;
+
+        for (String pat : allPatterns) {
+            int occurrences = patternOccurrences.get(pat);
+            int gamesAffected = gamesWithPattern.get(pat).size();
+            
+            if (occurrences > 0) {
+                double score = (gamesAffected * 3.0) + (occurrences * 0.5);
+                if (score > maxScore) {
+                    maxScore = score;
+                    biggestPat = pat;
+                    biggestPatGamesAffected = gamesAffected;
+                    biggestPatOccurrences = occurrences;
+                }
+            }
+        }
+
+        if (biggestPat == null) {
+            builder.status("NOT_ENOUGH_DATA");
+            return builder.build();
+        }
+
+        builder.patternOccurrences(patternOccurrences);
+        builder.gamesAffected(biggestPatGamesAffected);
+        builder.totalOccurrences(biggestPatOccurrences);
+
+        String weaknessName = "";
+        String category = "";
+        String description = "";
+        String recommendedLessonSlug = "";
+
+        switch (biggestPat) {
+            case "FORK":
+                weaknessName = "Knight Forks";
+                category = "Tactical Awareness";
+                description = "You repeatedly miss fork opportunities in your games.";
+                recommendedLessonSlug = "the-fork";
+                break;
+            case "PIN":
+                weaknessName = "Pins & Absolute Pins";
+                category = "Tactical Awareness";
+                description = "You struggle with pinned pieces and absolute pins.";
+                recommendedLessonSlug = "the-pin";
+                break;
+            case "SKEWER":
+                weaknessName = "Skewers";
+                category = "Tactical Awareness";
+                description = "You frequently miss skewers, allowing high-value pieces to be targeted.";
+                recommendedLessonSlug = "the-skewer";
+                break;
+            case "HANGING_PIECE":
+                weaknessName = "Hanging Pieces";
+                category = "Tactical Awareness";
+                description = "You repeatedly leave pieces undefended or miss opportunities to capture free pieces.";
+                recommendedLessonSlug = "piece-movement";
+                break;
+            case "BACK_RANK":
+                weaknessName = "Back-Rank Weakness";
+                category = "Tactical Awareness";
+                description = "You frequently leave your King trapped on the back rank behind pawns.";
+                recommendedLessonSlug = "king-safety";
+                break;
+            case "KING_SAFETY":
+                weaknessName = "King Safety & Castling";
+                category = "General Principles";
+                description = "You repeatedly leave your King in the center or fail to castle in time.";
+                recommendedLessonSlug = "castling-rules";
+                break;
+            case "OPENING":
+                weaknessName = "Opening Mistakes";
+                category = "General Principles";
+                description = "You repeatedly make development mistakes or move pieces multiple times in the opening.";
+                recommendedLessonSlug = "piece-development";
+                break;
+            case "ENDGAME":
+                weaknessName = "Endgame Principles";
+                category = "General Principles";
+                description = "You struggle to coordinate your King and pawns in the endgame.";
+                recommendedLessonSlug = "king-activity";
+                break;
+        }
+
+        builder.biggestWeakness(weaknessName);
+        builder.category(category);
+        builder.description(description);
+
+        if (!recommendedLessonSlug.isEmpty()) {
+            lessonRepository.findBySlug(recommendedLessonSlug).ifPresent(lesson -> {
+                builder.recommendedLessonTitle(lesson.getTitle());
+                builder.recommendedLessonSlug(lesson.getSlug());
+                builder.recommendedLessonCategory(lesson.getCategory().name());
+                builder.recommendedLessonShortDescription(lesson.getShortDescription());
+            });
+        }
+
+        return builder.build();
     }
 }

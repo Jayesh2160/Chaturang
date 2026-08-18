@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Layout } from '../components/Layout';
 import { gameService } from '../services/gameService';
-import type { GameResponse } from '../services/gameService';
+import type { GameResponse, WeaknessProfileResponse } from '../services/gameService';
 import { lessonService } from '../services/lessonService';
 import type { LessonResponse } from '../services/lessonService';
 import { ArrowRight, User, X, Check, Award, Flame, Sparkles, BookOpen, RefreshCw, Clock } from 'lucide-react';
@@ -49,6 +49,7 @@ export const Dashboard: React.FC = () => {
   const [streak, setStreak] = useState<number>(1);
   const [remainingLessons, setRemainingLessons] = useState<LessonResponse[]>([]);
   const [nextLesson, setNextLesson] = useState<LessonResponse | null>(null);
+  const [weaknessProfile, setWeaknessProfile] = useState<WeaknessProfileResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Play vs Computer Modal states
@@ -69,14 +70,16 @@ export const Dashboard: React.FC = () => {
     const loadDashboardData = async () => {
       try {
         setIsLoading(true);
-        const [gamesData, progressData] = await Promise.all([
+        const [gamesData, progressData, weaknessData] = await Promise.all([
           gameService.getGames(),
-          lessonService.getProgress()
+          lessonService.getProgress(),
+          gameService.getWeaknessProfile().catch(() => null)
         ]);
         setGames(gamesData);
         setCompletedCount(progressData.completedCount);
         setStreak(progressData.streak);
         setRemainingLessons(progressData.remainingLessons);
+        setWeaknessProfile(weaknessData);
 
         if (progressData.remainingLessons.length > 0) {
           setNextLesson(progressData.remainingLessons[0]);
@@ -422,6 +425,144 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Separator Line */}
+        <div className="h-[1px] bg-white/5 w-full" />
+
+        {/* Weakness Profile Section */}
+        {weaknessProfile && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-bold font-display text-white tracking-wide flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-brand-accent animate-pulse" />
+              Your Playing Profile
+            </h2>
+            
+            {weaknessProfile.status === 'NOT_ENOUGH_DATA' ? (
+              <div className="p-6 rounded-3xl bg-zinc-950/20 border border-white/5 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-center gap-6">
+                <div className="absolute right-0 top-0 h-24 w-24 bg-brand-accent/5 rounded-full filter blur-xl" />
+                <div className="h-12 w-12 rounded-xl bg-brand-accent/10 border border-brand-accent/15 flex items-center justify-center text-brand-accent shrink-0 animate-pulse">
+                  <User className="w-6 h-6" />
+                </div>
+                <div className="text-left space-y-1">
+                  <h4 className="text-sm font-semibold text-zinc-200 font-display">We're learning your playing style</h4>
+                  <p className="text-zinc-500 text-xs font-light">
+                    Analyze a few more games to unlock your personal weakness profile ({weaknessProfile.analyzedGamesCount || 0}/3 analyzed).
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Biggest Weakness Card */}
+                <div className="lg:col-span-2 p-6 rounded-3xl bg-zinc-950/20 border border-white/5 shadow-lg flex flex-col justify-between gap-6 relative overflow-hidden text-left">
+                  <div className="absolute right-0 top-0 h-32 w-32 bg-brand-accent/5 rounded-full filter blur-2xl pointer-events-none" />
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">
+                        Biggest Weakness
+                      </span>
+                      {weaknessProfile.status === 'EARLY_INSIGHTS' && (
+                        <span className="text-[9px] font-extrabold text-amber-400 uppercase tracking-widest bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/15">
+                          Early Insights
+                        </span>
+                      )}
+                    </div>
+                    
+                    <h3 className="text-2xl font-black font-display text-white tracking-tight flex items-center gap-2">
+                      <span className="text-brand-accent">♞</span> {weaknessProfile.category}: {weaknessProfile.biggestWeakness}
+                    </h3>
+                    
+                    <p className="text-zinc-350 text-xs leading-relaxed font-light">
+                      {weaknessProfile.description} You've missed {weaknessProfile.biggestWeakness?.toLowerCase()} opportunities in <strong className="text-brand-accent font-semibold">{weaknessProfile.gamesAffected} of your last {weaknessProfile.analyzedGamesCount}</strong> analyzed games ({weaknessProfile.totalOccurrences} total occurrences).
+                    </p>
+                  </div>
+
+                  {/* Progress bars for other patterns */}
+                  {weaknessProfile.patternOccurrences && (
+                    <div className="space-y-3 border-t border-white/5 pt-4">
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">
+                        Mistake Pattern Frequency
+                      </span>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                        {Object.entries(weaknessProfile.patternOccurrences)
+                          .filter(([_, val]) => val > 0)
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 4)
+                          .map(([key, value]) => (
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className="text-zinc-400 capitalize font-medium">{key.toLowerCase().replace('_', ' ')}</span>
+                                <span className="text-zinc-550 font-bold">{value}</span>
+                              </div>
+                              <div className="w-full bg-zinc-900 border border-white/5 h-1 rounded-full overflow-hidden">
+                                <div 
+                                  className="bg-brand-accent/60 h-full rounded-full animate-fade-in" 
+                                  style={{ width: `${Math.min(100, (value / (weaknessProfile.totalOccurrences || 1)) * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recommended Training Card */}
+                <div className="p-6 rounded-3xl bg-zinc-950/20 border border-brand-accent/20 hover:border-brand-accent/30 shadow-lg flex flex-col justify-between gap-6 relative overflow-hidden text-left group transition-all duration-300">
+                  <div className="absolute right-0 top-0 h-28 w-28 bg-brand-accent/5 rounded-full filter blur-2xl pointer-events-none" />
+                  
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-bold text-brand-accent uppercase tracking-widest block">
+                      Recommended Lesson
+                    </span>
+                    
+                    {weaknessProfile.recommendedLessonTitle ? (
+                      <>
+                        <h4 className="text-lg font-bold text-zinc-100 font-display group-hover:text-white transition-colors">
+                          {weaknessProfile.recommendedLessonTitle}
+                        </h4>
+                        <span className="text-[8px] font-bold text-zinc-550 uppercase tracking-widest block">
+                          {weaknessProfile.recommendedLessonCategory}
+                        </span>
+                        <p className="text-zinc-450 text-xs font-light leading-relaxed line-clamp-3 mt-1">
+                          {weaknessProfile.recommendedLessonShortDescription}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h4 className="text-base font-semibold text-zinc-400 font-display">
+                          We're still learning your playing patterns
+                        </h4>
+                        <p className="text-zinc-500 text-xs font-light leading-relaxed mt-1">
+                          We couldn't match a lesson to your profile yet. Keep practicing to unlock custom recommendations!
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  {weaknessProfile.recommendedLessonSlug ? (
+                    <Button
+                      variant="primary"
+                      onClick={() => navigate(`/academy/${weaknessProfile.recommendedLessonSlug}`)}
+                      className="w-full py-2.5 bg-brand-accent text-white hover:bg-brand-accent-hover font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 rounded-xl transition-all"
+                    >
+                      Start Training <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/academy')}
+                      className="w-full py-2.5 border-white/10 text-zinc-400 hover:border-white/20 hover:text-zinc-200 font-bold text-xs uppercase tracking-wide rounded-xl"
+                    >
+                      Browse Academy
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Separator Line */}
         <div className="h-[1px] bg-white/5 w-full" />
