@@ -189,6 +189,17 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   });
 
+  // Sync URL searchParams into gameSetupOptions state (crucial for in-page navigation to ?gameMode=ONLINE)
+  useEffect(() => {
+    const modeParam = searchParams.get('gameMode')?.toUpperCase();
+    if (modeParam === 'ONLINE' && gameSetupOptions.gameMode !== 'ONLINE') {
+      setGameSetupOptions((prev) => ({
+        ...prev,
+        gameMode: 'ONLINE',
+      }));
+    }
+  }, [searchParams, gameSetupOptions.gameMode]);
+
   const [activePreset, setActivePreset] = useState<ClockPreset>(
     DEFAULT_CLOCK_PRESETS.find((p) => p.id === gameSetupOptions.presetId) ||
       DEFAULT_CLOCK_PRESETS[3]
@@ -624,8 +635,12 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (gameSetupOptions.gameMode !== 'ONLINE') return;
 
     const currentRoom = roomCodeParam || generateRoomCode();
-    const myName = user?.username || 'You';
+    const myName = user?.username || 'Player';
     const myRating = user?.rating || 1200;
+
+    // Reset local board for fresh online match
+    engine.resetGame();
+    clock.resetClock();
 
     if (roleParam === 'HOST') {
       onlineGameService.createRoom(

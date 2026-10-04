@@ -14,6 +14,16 @@ export interface RoomResponse {
   createdAt: number;
 }
 
+export interface RoomEvent {
+  id: number;
+  roomCode: string;
+  type: string;
+  senderId?: string;
+  senderName?: string;
+  payload?: any;
+  timestamp: number;
+}
+
 export interface CreateRoomDto {
   timeControl?: string;
   minutes?: number;
@@ -89,6 +99,35 @@ export const roomApiService = {
       return response.data;
     } catch (err) {
       return null;
+    }
+  },
+
+  // Send an event into the room message bus (Move, Join, Resign, Chat, Draw)
+  sendEvent: async (
+    roomCode: string,
+    event: { type: string; senderId?: string; senderName?: string; payload?: any }
+  ): Promise<RoomEvent | null> => {
+    try {
+      const response = await api.post<RoomEvent>(
+        `/api/rooms/${encodeURIComponent(roomCode.trim().toUpperCase())}/events`,
+        event
+      );
+      return response.data;
+    } catch (err) {
+      console.warn('[roomApiService] sendEvent warning:', err);
+      return null;
+    }
+  },
+
+  // Retrieve room events since sequence ID (for cross-network reliability)
+  getEvents: async (roomCode: string, sinceId = 0): Promise<RoomEvent[]> => {
+    try {
+      const response = await api.get<RoomEvent[]>(
+        `/api/rooms/${encodeURIComponent(roomCode.trim().toUpperCase())}/events?since=${sinceId}`
+      );
+      return response.data || [];
+    } catch (err) {
+      return [];
     }
   },
 

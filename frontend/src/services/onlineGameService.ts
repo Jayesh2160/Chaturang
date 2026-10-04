@@ -10,6 +10,7 @@ import type {
   ChatPayload,
 } from '../types/online';
 import type { PlayerColor } from '../types/chess';
+import { roomApiService } from './roomApiService';
 
 export type OnlineEventCallback<T = any> = (data: T) => void;
 
@@ -30,6 +31,10 @@ class OnlineGameService {
   private localPlayer: OnlinePlayerProfile | null = null;
   private opponentPlayer: OnlinePlayerProfile | null = null;
   private processedMessageIds = new Set<string>();
+
+  // Server-assisted polling relay for guaranteed cross-network connectivity
+  private serverPollingInterval: any = null;
+  private lastServerEventId = 0;
 
   // Event Listeners
   private listeners: Record<string, Set<OnlineEventCallback>> = {};
@@ -95,7 +100,8 @@ class OnlineGameService {
   ) {
     this.cleanup();
     this.role = 'HOST';
-    this.roomConfig = { ...config, roomCode: roomCode.toUpperCase() };
+    const formattedCode = roomCode.trim().toUpperCase();
+    this.roomConfig = { ...config, roomCode: formattedCode };
 
     // Resolve Host Color
     let hostColor: PlayerColor = 'w';
@@ -109,8 +115,9 @@ class OnlineGameService {
     };
 
     this.setStatus('WAITING_FOR_OPPONENT', 'Room created. Share the code with a friend.');
-    this.initBroadcastChannel(roomCode);
-    this.initHostPeer(roomCode);
+    this.initBroadcastChannel(formattedCode);
+    this.initHostPeer(formattedCode);
+    this.startServerPolling(formattedCode);
   }
 
   // --- GUEST: Join an Existing Room ---
@@ -139,11 +146,60 @@ class OnlineGameService {
     this.setStatus('CONNECTING', `Connecting to room ${formattedCode}...`);
     this.initBroadcastChannel(formattedCode);
     this.initGuestPeer(formattedCode);
+    this.startServerPolling(formattedCode);
 
-    // Announce presence across broadcast channel immediately
-    this.broadcastMessage('ROOM_JOIN', {
+    // Announce presence across all channels immediately
+    this.sendMessage('ROOM_JOIN', {
       guest: this.localPlayer,
     });
+  }
+
+  // Server-assisted polling relay loop
+  private startServerPolling(roomCode: string) {
+    this.stopServerPolling();
+    this.lastServerEventId = 0;
+
+    const poll = async () => {
+      try {
+        const events = await roomApiService.getEvents(roomCode, this.lastServerEventId);
+        if (events && events.length > 0) {
+          for (const ev of events) {
+            if (ev.id > this.lastServerEventId) {
+              this.lastServerEventId = ev.id;
+            }
+
+            const clientMsgId = (ev.payload && ev.payload._clientMsgId) || `srv-${ev.id}`;
+            if (this.processedMessageIds.has(clientMsgId)) {
+              continue;
+            }
+            this.processedMessageIds.add(clientMsgId);
+
+            const msg: OnlineMessage = {
+              id: clientMsgId,
+              type: ev.type as OnlineMessageType,
+              senderId: ev.senderId || 'server-peer',
+              senderName: ev.senderName || 'Player',
+              payload: ev.payload,
+              timestamp: ev.timestamp || Date.now(),
+            };
+
+            this.handleIncomingRawMessage(msg);
+          }
+        }
+      } catch (err) {
+        // Continue polling silently
+      }
+    };
+
+    poll();
+    this.serverPollingInterval = setInterval(poll, 700);
+  }
+
+  private stopServerPolling() {
+    if (this.serverPollingInterval) {
+      clearInterval(this.serverPollingInterval);
+      this.serverPollingInterval = null;
+    }
   }
 
   // Broadcast Channel setup (Zero-latency cross-tab communication)
@@ -154,7 +210,7 @@ class OnlineGameService {
         this.handleIncomingRawMessage(event.data);
       };
     } catch (e) {
-      console.warn('[OnlineGameService] BroadcastChannel not supported, falling back to WebRTC/Storage.', e);
+      console.warn('[OnlineGameService] BroadcastChannel not supported, falling back to WebRTC/Server.', e);
     }
   }
 
@@ -185,7 +241,8 @@ class OnlineGameService {
 
   // Initialize WebRTC Peer as Host
   private initHostPeer(roomCode: string) {
-    const peerId = `chaturang-host-${roomCode.toLowerCase()}`;
+    const clean = roomCode.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const peerId = `chaturang-host-${clean}`;
     try {
       this.peer = new Peer(peerId, OnlineGameService.PEER_CONFIG);
 
@@ -200,8 +257,7 @@ class OnlineGameService {
       });
 
       this.peer.on('error', (err) => {
-        console.warn('[OnlineGameService] Host Peer warning/error:', err.type, err.message);
-        // If peer ID is taken or network error, local BroadcastChannel continues to work
+        console.warn('[OnlineGameService] Host Peer error (server relay active):', err.type, err.message);
       });
     } catch (err) {
       console.warn('[OnlineGameService] WebRTC Peer initialization skipped:', err);
@@ -210,8 +266,9 @@ class OnlineGameService {
 
   // Initialize WebRTC Peer as Guest
   private initGuestPeer(roomCode: string) {
-    const guestPeerId = `chaturang-guest-${roomCode.toLowerCase()}-${Math.random().toString(36).substring(2, 7)}`;
-    const hostPeerId = `chaturang-host-${roomCode.toLowerCase()}`;
+    const clean = roomCode.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const guestPeerId = `chaturang-guest-${clean}-${Math.random().toString(36).substring(2, 7)}`;
+    const hostPeerId = `chaturang-host-${clean}`;
 
     try {
       this.peer = new Peer(guestPeerId, OnlineGameService.PEER_CONFIG);
@@ -224,10 +281,10 @@ class OnlineGameService {
       });
 
       this.peer.on('error', (err) => {
-        console.warn('[OnlineGameService] Guest Peer connection error:', err.type, err.message);
+        console.warn('[OnlineGameService] Guest Peer connection error (server relay active):', err.type, err.message);
       });
     } catch (err) {
-      console.warn('[OnlineGameService] Guest WebRTC init failed:', err);
+      console.warn('[OnlineGameService] Guest WebRTC init skipped:', err);
     }
   }
 
@@ -245,7 +302,6 @@ class OnlineGameService {
 
     conn.on('close', () => {
       console.log('[OnlineGameService] WebRTC connection closed.');
-      this.emit('disconnected');
     });
 
     conn.on('error', (err) => {
@@ -253,12 +309,13 @@ class OnlineGameService {
     });
   }
 
-  // Universal Message Sender (Dispatches via DataChannel + BroadcastChannel + LocalStorage)
+  // Universal Message Sender (Dispatches via DataChannel + Server Relay + BroadcastChannel + LocalStorage)
   public sendMessage<T = any>(type: OnlineMessageType, payload: T) {
     if (!this.localPlayer || !this.roomConfig) return;
 
+    const msgId = `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const msg: OnlineMessage<T> = {
-      id: `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: msgId,
       type,
       senderId: this.localPlayer.id,
       senderName: this.localPlayer.name,
@@ -268,10 +325,23 @@ class OnlineGameService {
 
     this.processedMessageIds.add(msg.id);
     this.broadcastMessageRaw(msg);
-  }
 
-  private broadcastMessage<T = any>(type: OnlineMessageType, payload: T) {
-    this.sendMessage(type, payload);
+    // Guaranteed Server-Assisted Message Relay
+    if (this.roomConfig.roomCode) {
+      const payloadObj =
+        typeof payload === 'object' && payload !== null
+          ? { ...payload, _clientMsgId: msgId }
+          : { value: payload, _clientMsgId: msgId };
+
+      roomApiService
+        .sendEvent(this.roomConfig.roomCode, {
+          type,
+          senderId: this.localPlayer.id,
+          senderName: this.localPlayer.name,
+          payload: payloadObj,
+        })
+        .catch(() => {});
+    }
   }
 
   private broadcastMessageRaw(msg: OnlineMessage) {
@@ -310,7 +380,10 @@ class OnlineGameService {
     const msg = data as OnlineMessage;
 
     // Ignore self messages or duplicates
-    if (msg.senderId === this.localPlayer?.id || this.processedMessageIds.has(msg.id)) {
+    if (msg.senderId === this.localPlayer?.id) {
+      return;
+    }
+    if (this.processedMessageIds.has(msg.id)) {
       return;
     }
     this.processedMessageIds.add(msg.id);
@@ -439,6 +512,7 @@ class OnlineGameService {
 
   // Cleanup connections
   public cleanup() {
+    this.stopServerPolling();
     if (this.connection) {
       try {
         this.connection.close();
