@@ -98,11 +98,11 @@ function App() {
           />
           <Route
             path="/play"
-            element={
-              <ProtectedRoute>
-                <PlayGame />
-              </ProtectedRoute>
-            }
+            element={<PlayGame />}
+          />
+          <Route
+            path="/online"
+            element={<Navigate to="/play?gameMode=ONLINE" replace />}
           />
           <Route
             path="/my-games"

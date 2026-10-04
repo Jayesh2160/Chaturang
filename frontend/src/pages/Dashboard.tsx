@@ -7,7 +7,7 @@ import { gameService } from '../services/gameService';
 import type { GameResponse, WeaknessProfileResponse } from '../services/gameService';
 import { lessonService } from '../services/lessonService';
 import type { LessonResponse } from '../services/lessonService';
-import { ArrowRight, User, X, Check, Award, Flame, Sparkles, BookOpen, RefreshCw, Clock } from 'lucide-react';
+import { ArrowRight, User, X, Check, Award, Flame, Sparkles, BookOpen, RefreshCw, Clock, Globe } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
@@ -249,6 +249,41 @@ export const Dashboard: React.FC = () => {
               <span className="text-[9px] text-zinc-550 block font-semibold truncate uppercase">
                 {stats.xpRequiredForNextLevel - stats.xpInCurrentLevel} XP to Level {stats.level + 1}
               </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Online Matchmaking Banner */}
+        <div className="relative overflow-hidden rounded-3xl border border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-zinc-950 to-indigo-950/40 p-6 sm:p-7 shadow-2xl">
+          <div className="absolute right-0 top-0 h-48 w-48 bg-purple-500/10 rounded-full filter blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300">
+                  Global Chess Arena · Live P2P Multiplayer
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black font-display text-white">
+                Play Live Chess Online or Invite a Friend
+              </h3>
+              <p className="text-xs text-zinc-400 font-light max-w-xl">
+                Quick random matchmaking with rating calibration or instant private rooms using 6-character room codes.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <Button
+                onClick={() => setIsOnlineModalOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-lg shadow-purple-900/40 flex items-center gap-2 group transition-all"
+              >
+                <Globe className="w-4 h-4 text-purple-200" />
+                <span>Open Online Arena</span>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+              </Button>
             </div>
           </div>
         </div>

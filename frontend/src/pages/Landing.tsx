@@ -5,7 +5,8 @@ import { ThreeChessboard } from '../components/ThreeChessboard';
 import { useAuth } from '../context/AuthContext';
 import { 
   ArrowRight, 
-  ChevronRight
+  ChevronRight,
+  Globe
 } from 'lucide-react';
 
 // Counter Component for Stats Section
@@ -136,8 +137,23 @@ export const Landing: React.FC = () => {
           </div>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-8 text-xs font-semibold tracking-widest text-zinc-400">
-            {['HOME', 'ACADEMY', 'PLAY', 'ANALYSIS', 'ABOUT'].map((link) => {
+          <div className="hidden md:flex items-center gap-6 text-xs font-semibold tracking-widest text-zinc-400">
+            {['HOME', 'ONLINE', 'ACADEMY', 'PLAY', 'ANALYSIS', 'ABOUT'].map((link) => {
+              if (link === 'ONLINE') {
+                return (
+                  <button
+                    key={link}
+                    onClick={() => navigate('/play?gameMode=ONLINE')}
+                    className="text-purple-300 hover:text-white transition-colors relative py-1 cursor-pointer tracking-widest flex items-center gap-1.5"
+                  >
+                    <span>ONLINE</span>
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                  </button>
+                );
+              }
               const sectionId = link === 'ABOUT' ? 'testimonials' : link.toLowerCase();
               const isActive = activeSection === sectionId || (link === 'ABOUT' && activeSection === 'testimonials');
               
@@ -215,25 +231,32 @@ export const Landing: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <button 
+              onClick={() => navigate('/play?gameMode=ONLINE')}
+              className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs tracking-widest hover:from-purple-500 hover:to-indigo-500 transition-all duration-300 shadow-xl shadow-purple-600/30 flex items-center gap-2 group cursor-pointer"
+            >
+              <Globe className="w-4 h-4 text-purple-200" />
+              <span>PLAY ONLINE</span>
+              <span className="relative flex h-2 w-2 ml-0.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+            </button>
+            <button 
+              onClick={() => navigate('/play')}
+              className="px-6 py-3.5 rounded-xl bg-white text-zinc-950 font-bold text-xs tracking-widest hover:bg-zinc-200 transition-all duration-300 shadow-xl shadow-white/5 flex items-center gap-2 cursor-pointer"
+            >
+              PLAY CHESS
+            </button>
             <button 
               onClick={() => {
                 if (isAuthenticated) navigate('/academy');
                 else navigate('/login');
               }}
-              className="px-8 py-3.5 rounded-lg bg-white text-zinc-950 font-bold text-xs tracking-widest hover:bg-zinc-200 transition-all duration-300 shadow-xl shadow-white/5 flex items-center gap-2 group cursor-pointer"
+              className="px-6 py-3.5 rounded-xl bg-zinc-900/70 border border-white/10 text-white font-bold text-xs tracking-widest hover:bg-zinc-800 transition-all duration-300 cursor-pointer"
             >
               EXPLORE ACADEMY
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </button>
-            <button 
-              onClick={() => {
-                if (isAuthenticated) navigate('/play');
-                else navigate('/login');
-              }}
-              className="px-8 py-3.5 rounded-lg bg-zinc-900/60 border border-white/10 text-white font-bold text-xs tracking-widest hover:bg-zinc-800 transition-all duration-300 cursor-pointer"
-            >
-              PLAY CHESS
             </button>
           </div>
 

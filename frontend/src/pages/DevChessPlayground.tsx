@@ -12,8 +12,11 @@ import { PromotionModal } from '../components/chess/PromotionModal';
 import { ClockPresetModal } from '../components/chess/ClockPresetModal';
 import { PreGameModal } from '../components/chess/PreGameModal';
 import { GameResultModal } from '../components/chess/GameResultModal';
+import { OnlineGameBanner } from '../components/chess/OnlineGameBanner';
+import { OnlineMatchModal } from '../components/chess/OnlineMatchModal';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Globe, Users, Bot } from 'lucide-react';
 
 // ─── Quick FEN Test Positions ────────────────────────────────────────────────
 
@@ -178,9 +181,22 @@ const DevChessContent: React.FC = () => {
     setIsResultModalOpen,
     customResult,
     resignGame,
+
+    // Online Multiplayer additions
+    onlineStatus,
+    onlineOpponent,
+    roomCode,
+    incomingDrawOffer,
+    lastChatMessage,
+    sendOnlineChat,
+    sendOnlineDrawOffer,
+    acceptOnlineDraw,
+    declineOnlineDraw,
+    sendOnlineRematch,
   } = useChessGameContext();
 
   const [isClockModalOpen, setIsClockModalOpen] = useState(false);
+  const [isOnlineModalOpen, setIsOnlineModalOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [opponentNameInput, setOpponentNameInput] = useState(opponentPlayer.name);
   const [customResultInput, setCustomResultInput] = useState('IN_PROGRESS');
@@ -307,13 +323,28 @@ const DevChessContent: React.FC = () => {
             </p>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={() => setIsPreGameModalOpen(true)}
-            className="self-start text-xs py-2 px-3 text-purple-300 border-purple-500/30"
-          >
-            ⚙️ Configure Match
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsOnlineModalOpen(true)}
+              className="self-start text-xs py-2 px-3.5 text-purple-200 border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 flex items-center gap-2 shadow-lg shadow-purple-950/30 transition-all"
+            >
+              <Globe className="w-3.5 h-3.5 text-purple-400" />
+              <span className="font-semibold">Play Online</span>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setIsPreGameModalOpen(true)}
+              className="self-start text-xs py-2 px-3 text-purple-300 border-purple-500/30"
+            >
+              ⚙️ Configure Match
+            </Button>
+          </div>
         </div>
 
         {/* Dev Banner with FEN quick-loaders */}
@@ -354,7 +385,94 @@ const DevChessContent: React.FC = () => {
           </div>
 
           {/* Center: Board + Player Panels */}
-          <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col items-center gap-4">
+          <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col items-center gap-3">
+            {/* Tournament Mode Selector Bar */}
+            <div className="w-full grid grid-cols-3 gap-1.5 bg-zinc-900/80 border border-white/5 p-1 rounded-xl shadow-lg">
+              <button
+                onClick={() => updateGameSetup({ ...gameSetupOptions, gameMode: 'SELF' })}
+                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  gameSetupOptions.gameMode === 'SELF'
+                    ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Local Board</span>
+                <span className="sm:hidden">Local</span>
+              </button>
+
+              <button
+                onClick={() => updateGameSetup({ ...gameSetupOptions, gameMode: 'COMPUTER' })}
+                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  gameSetupOptions.gameMode === 'COMPUTER'
+                    ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Bot className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">vs Stockfish</span>
+                <span className="sm:hidden">Stockfish</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  updateGameSetup({ ...gameSetupOptions, gameMode: 'ONLINE' });
+                  setIsOnlineModalOpen(true);
+                }}
+                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  gameSetupOptions.gameMode === 'ONLINE'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/30'
+                    : 'text-purple-300 hover:text-white hover:bg-purple-950/40'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5 text-purple-300" />
+                <span className="hidden sm:inline">Play Online</span>
+                <span className="sm:hidden">Online</span>
+                <span className="relative flex h-2 w-2 ml-0.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              </button>
+            </div>
+
+            {/* Online Match Live HUD Banner */}
+            {gameSetupOptions.gameMode === 'ONLINE' && onlineStatus !== 'IDLE' && (
+              <OnlineGameBanner
+                status={onlineStatus}
+                roomCode={roomCode}
+                opponent={onlineOpponent}
+                onSendChat={sendOnlineChat}
+                onOfferDraw={sendOnlineDrawOffer}
+                onResign={handleResign}
+                onRematch={sendOnlineRematch}
+                isGameOver={!!activeResult}
+                incomingDrawOffer={incomingDrawOffer}
+                onAcceptDraw={acceptOnlineDraw}
+                onDeclineDraw={declineOnlineDraw}
+                lastChatMessage={lastChatMessage}
+              />
+            )}
+
+            {/* Online Match Quick CTA when online mode is active but IDLE */}
+            {gameSetupOptions.gameMode === 'ONLINE' && onlineStatus === 'IDLE' && (
+              <div className="w-full p-3.5 bg-gradient-to-r from-purple-950/40 via-zinc-900/70 to-purple-950/40 border border-purple-500/30 rounded-xl flex items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <div>
+                    <p className="text-xs font-bold text-white">Online Mode Active</p>
+                    <p className="text-[11px] text-zinc-400">Match with a player or invite a friend via Room Code</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setIsOnlineModalOpen(true)}
+                  className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 shadow-md shadow-purple-600/30"
+                >
+                  Match / Create Room
+                </Button>
+              </div>
+            )}
+
             <PlayerPanel
               player={topPlayer}
               timeInSeconds={topTime}
@@ -440,6 +558,14 @@ const DevChessContent: React.FC = () => {
               resetGame();
             }}
             onClose={() => setIsPreGameModalOpen(false)}
+          />
+        )}
+
+        {/* Online Matchmaking & Room Code Modal */}
+        {isOnlineModalOpen && (
+          <OnlineMatchModal
+            isOpen={isOnlineModalOpen}
+            onClose={() => setIsOnlineModalOpen(false)}
           />
         )}
 
