@@ -14,24 +14,42 @@ import {
   X,
 } from 'lucide-react';
 import { generateRoomCode } from '../../services/onlineGameService';
+import { roomApiService } from '../../services/roomApiService';
 import { useAuth } from '../../context/AuthContext';
 
 interface OnlineMatchModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialRoomCode?: string;
+  initialTab?: 'MATCHMAKING' | 'ROOM_CODE';
+  initialRoomSubTab?: 'CREATE' | 'JOIN';
 }
 
 export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
   isOpen,
   onClose,
   initialRoomCode = '',
+  initialTab = 'MATCHMAKING',
+  initialRoomSubTab = 'CREATE',
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'MATCHMAKING' | 'ROOM_CODE'>('MATCHMAKING');
-  const [roomSubTab, setRoomSubTab] = useState<'CREATE' | 'JOIN'>('CREATE');
+  const [activeTab, setActiveTab] = useState<'MATCHMAKING' | 'ROOM_CODE'>(initialTab);
+  const [roomSubTab, setRoomSubTab] = useState<'CREATE' | 'JOIN'>(initialRoomSubTab);
+
+  // Sync props if changed
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
+
+  useEffect(() => {
+    if (isOpen && initialRoomSubTab) {
+      setRoomSubTab(initialRoomSubTab);
+    }
+  }, [isOpen, initialRoomSubTab]);
 
   // Matchmaking State
   const [timeControl, setTimeControl] = useState<'rapid' | 'blitz' | 'bullet'>('rapid');
@@ -104,6 +122,15 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
   };
 
   const handleStartHostRoom = () => {
+    // Notify backend room service
+    roomApiService.createRoom({
+      timeControl: roomMinutes <= 1 ? 'bullet' : roomMinutes <= 3 ? 'blitz' : 'rapid',
+      minutes: roomMinutes,
+      preferredColor: selectedColor,
+      playerName: user?.username,
+      rating: user?.rating,
+    }).catch(() => {});
+
     navigate(
       `/play?gameMode=ONLINE&room=${generatedRoomCode}&role=host&color=${selectedColor}&minutes=${roomMinutes}`
     );
@@ -114,6 +141,14 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
     e.preventDefault();
     if (!joinRoomInput.trim()) return;
     const cleanCode = joinRoomInput.trim().toUpperCase();
+
+    // Notify backend room service
+    roomApiService.joinRoom({
+      roomCode: cleanCode,
+      playerName: user?.username,
+      rating: user?.rating,
+    }).catch(() => {});
+
     navigate(`/play?gameMode=ONLINE&room=${cleanCode}&role=guest`);
     onClose();
   };
