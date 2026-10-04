@@ -188,17 +188,66 @@ public class StockfishServiceImpl implements StockfishService {
         }
     }
 
+    @Override
+    public boolean isAvailable() {
+        return resolveStockfishPath() != null;
+    }
+
     private String getAbsoluteStockfishPath() {
-        File file = new File(stockfishPath);
-        if (!file.isAbsolute()) {
-            file = Paths.get("").toAbsolutePath().resolve(stockfishPath).toFile();
-        }
-        if (!file.exists()) {
-            String errorMsg = "Stockfish binary path does not exist. Please configure it in application.properties at: " + file.getAbsolutePath();
+        String resolved = resolveStockfishPath();
+        if (resolved == null) {
+            String errorMsg = "Stockfish binary path does not exist. Please configure it via the STOCKFISH_PATH environment variable or application.properties.";
             log.error(errorMsg);
             throw new RuntimeException(errorMsg);
         }
-        return file.getAbsolutePath();
+        return resolved;
+    }
+
+    private String resolveStockfishPath() {
+        // 1. Check configured stockfishPath
+        if (stockfishPath != null && !stockfishPath.trim().isEmpty()) {
+            File direct = new File(stockfishPath);
+            if (direct.isAbsolute() && direct.exists()) {
+                return direct.getAbsolutePath();
+            }
+            File resolved = Paths.get("").toAbsolutePath().resolve(stockfishPath).toFile();
+            if (resolved.exists()) {
+                return resolved.getAbsolutePath();
+            }
+            File parentResolved = Paths.get("..").toAbsolutePath().resolve(stockfishPath).toFile();
+            if (parentResolved.exists()) {
+                return parentResolved.getAbsolutePath();
+            }
+        }
+
+        // 2. Check standard Linux/Unix paths and local directories
+        String[] fallbackPaths = {
+            "/usr/games/stockfish",
+            "/usr/bin/stockfish",
+            "/usr/local/bin/stockfish",
+            "bin/stockfish.exe",
+            "../bin/stockfish.exe"
+        };
+
+        for (String candidate : fallbackPaths) {
+            File candidateFile = new File(candidate);
+            if (candidateFile.isAbsolute()) {
+                if (candidateFile.exists()) {
+                    return candidateFile.getAbsolutePath();
+                }
+            } else {
+                File relFile = Paths.get("").toAbsolutePath().resolve(candidate).toFile();
+                if (relFile.exists()) {
+                    return relFile.getAbsolutePath();
+                }
+                File parentRelFile = Paths.get("..").toAbsolutePath().resolve(candidate).toFile();
+                if (parentRelFile.exists()) {
+                    return parentRelFile.getAbsolutePath();
+                }
+            }
+        }
+
+        return null;
     }
 
     private void writeCommand(String command) throws IOException {

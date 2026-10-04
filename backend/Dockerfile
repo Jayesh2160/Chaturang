@@ -23,6 +23,9 @@ WORKDIR /app
 # Install stockfish engine package
 RUN apt-get update && apt-get install -y stockfish && rm -rf /var/lib/apt/lists/*
 
+# Set default Stockfish binary path for Linux container
+ENV STOCKFISH_PATH=/usr/games/stockfish
+
 # Expose the default Spring Boot port
 EXPOSE 8080
 

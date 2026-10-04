@@ -2,7 +2,9 @@ package com.chaturang.service;
 
 import com.chaturang.dto.EvaluationResponse;
 import com.chaturang.entity.EngineDifficulty;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -13,6 +15,12 @@ class StockfishServiceTests {
 
     @Autowired
     private StockfishService stockfishService;
+
+    @BeforeEach
+    void checkStockfishAvailability() {
+        Assumptions.assumeTrue(stockfishService.isAvailable(),
+                "Stockfish binary is not installed or available on this system. Skipping engine integration tests.");
+    }
 
     @Test
     void testGetBestMove_StartingPosition() {
