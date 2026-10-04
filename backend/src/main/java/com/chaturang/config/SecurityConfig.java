@@ -44,6 +44,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.web.cors.CorsUtils::isPreFlightRequest).permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/rooms/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
