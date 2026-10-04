@@ -3,15 +3,21 @@ package com.chaturang.service;
 import com.chaturang.dto.CreateRoomRequest;
 import com.chaturang.dto.JoinRoomRequest;
 import com.chaturang.dto.MatchmakingRequest;
+import com.chaturang.dto.RoomEvent;
 import com.chaturang.dto.RoomResponse;
+import com.chaturang.dto.SendEventRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -20,10 +26,15 @@ public class RoomServiceImpl implements RoomService {
     private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int CODE_LENGTH = 6;
     private static final long ROOM_EXPIRATION_MS = 2 * 60 * 60 * 1000L; // 2 hours
+    private static final int MAX_EVENTS_PER_ROOM = 250;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     // In-memory thread-safe room registry: roomCode -> RoomResponse
     private final Map<String, RoomResponse> roomRegistry = new ConcurrentHashMap<>();
+
+    // Room event buffer for server-assisted message relay: roomCode -> List<RoomEvent>
+    private final Map<String, List<RoomEvent>> roomEvents = new ConcurrentHashMap<>();
+    private final AtomicLong eventIdSequence = new AtomicLong(1);
 
     // Matchmaking waiting queues by timeControl (e.g. "rapid", "blitz", "bullet")
     private final Map<String, Queue<WaitingPlayer>> matchmakingQueues = new ConcurrentHashMap<>();
@@ -91,22 +102,24 @@ public class RoomServiceImpl implements RoomService {
         RoomResponse existing = roomRegistry.get(cleanCode);
 
         if (existing == null) {
-            throw new IllegalArgumentException("Room code '" + cleanCode + "' not found or has expired.");
-        }
-
-        if ("READY".equals(existing.getStatus()) || "IN_PROGRESS".equals(existing.getStatus())) {
-            // If the same player is reconnecting
-            String currentGuest = existing.getGuestName();
-            String playerName = resolvePlayerName(request.getPlayerName(), username);
-            if (playerName.equalsIgnoreCase(currentGuest) || playerName.equalsIgnoreCase(existing.getHostName())) {
-                return existing;
-            }
-            throw new IllegalArgumentException("Room '" + cleanCode + "' is already full.");
+            // Auto-create room stub so peer/guest can still connect without hard 404
+            existing = RoomResponse.builder()
+                    .roomCode(cleanCode)
+                    .status("WAITING")
+                    .timeControl("rapid")
+                    .minutes(10)
+                    .hostName("Host")
+                    .hostRating(1200)
+                    .hostColor("w")
+                    .createdAt(System.currentTimeMillis())
+                    .build();
+            roomRegistry.put(cleanCode, existing);
         }
 
         String guestName = resolvePlayerName(request.getPlayerName(), username);
         Integer guestRating = resolvePlayerRating(request.getRating(), rating);
 
+        // Allow reconnect or join
         existing.setGuestName(guestName);
         existing.setGuestRating(guestRating);
         existing.setStatus("READY");
@@ -141,12 +154,10 @@ public class RoomServiceImpl implements RoomService {
         // Check if there is already a waiting opponent in the queue
         WaitingPlayer opponent = queue.poll();
         while (opponent != null && (opponent.playerName.equalsIgnoreCase(playerName) || !roomRegistry.containsKey(opponent.roomCode))) {
-            // Discard self or expired room entries
             opponent = queue.poll();
         }
 
         if (opponent != null) {
-            // Pair with waiting opponent
             RoomResponse pairedRoom = roomRegistry.get(opponent.roomCode);
             if (pairedRoom != null && "WAITING".equals(pairedRoom.getStatus())) {
                 pairedRoom.setGuestName(playerName);
@@ -157,7 +168,6 @@ public class RoomServiceImpl implements RoomService {
             }
         }
 
-        // No opponent ready: create a new waiting room and add to matchmaking queue
         CreateRoomRequest createReq = CreateRoomRequest.builder()
                 .timeControl(tc)
                 .minutes("bullet".equals(tc) ? 1 : "blitz".equals(tc) ? 3 : 10)
@@ -181,6 +191,86 @@ public class RoomServiceImpl implements RoomService {
         log.info("Cancelled matchmaking for player: {}", playerName);
     }
 
+    @Override
+    public RoomEvent sendEvent(String roomCode, SendEventRequest request) {
+        if (roomCode == null || roomCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("Room code cannot be empty");
+        }
+        String cleanCode = roomCode.trim().toUpperCase();
+
+        // Ensure room exists in registry
+        roomRegistry.computeIfAbsent(cleanCode, code -> RoomResponse.builder()
+                .roomCode(code)
+                .status("WAITING")
+                .timeControl("rapid")
+                .minutes(10)
+                .hostName("Host")
+                .hostRating(1200)
+                .hostColor("w")
+                .createdAt(System.currentTimeMillis())
+                .build());
+
+        RoomResponse room = roomRegistry.get(cleanCode);
+
+        // Status transition on relevant events
+        String type = request.getType() != null ? request.getType().toUpperCase() : "UNKNOWN";
+        if ("ROOM_JOIN".equals(type)) {
+            if (request.getPayload() instanceof Map<?, ?> map) {
+                Object guestObj = map.get("guest");
+                if (guestObj instanceof Map<?, ?> guestMap) {
+                    Object name = guestMap.get("name");
+                    Object r = guestMap.get("rating");
+                    if (name != null) room.setGuestName(name.toString());
+                    if (r instanceof Number num) room.setGuestRating(num.intValue());
+                }
+            }
+            if (!"IN_PROGRESS".equals(room.getStatus())) {
+                room.setStatus("READY");
+            }
+        } else if ("MOVE".equals(type)) {
+            room.setStatus("IN_PROGRESS");
+        } else if ("RESIGN".equals(type) || "DRAW_ACCEPT".equals(type)) {
+            room.setStatus("FINISHED");
+        }
+
+        RoomEvent event = RoomEvent.builder()
+                .id(eventIdSequence.getAndIncrement())
+                .roomCode(cleanCode)
+                .type(type)
+                .senderId(request.getSenderId())
+                .senderName(request.getSenderName() != null ? request.getSenderName() : "Player")
+                .payload(request.getPayload())
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+        List<RoomEvent> events = roomEvents.computeIfAbsent(cleanCode, k -> new CopyOnWriteArrayList<>());
+        events.add(event);
+
+        while (events.size() > MAX_EVENTS_PER_ROOM) {
+            events.remove(0);
+        }
+
+        log.debug("Room event stored: room={}, type={}, sender={}, id={}", cleanCode, event.getType(), event.getSenderName(), event.getId());
+        return event;
+    }
+
+    @Override
+    public List<RoomEvent> getEvents(String roomCode, Long sinceId) {
+        if (roomCode == null || roomCode.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        String cleanCode = roomCode.trim().toUpperCase();
+        List<RoomEvent> events = roomEvents.get(cleanCode);
+        if (events == null || events.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        long threshold = sinceId != null ? sinceId : 0L;
+        return events.stream()
+                .filter(e -> e.getId() > threshold)
+                .toList();
+    }
+
     private String generateUniqueRoomCode() {
         for (int i = 0; i < 20; i++) {
             StringBuilder sb = new StringBuilder(CODE_LENGTH);
@@ -192,7 +282,7 @@ public class RoomServiceImpl implements RoomService {
                 return code;
             }
         }
-        return "R" + System.currentTimeMillis() % 100000;
+        return "R" + (System.currentTimeMillis() % 100000);
     }
 
     private String resolvePlayerName(String inputName, String authUsername) {
@@ -218,5 +308,6 @@ public class RoomServiceImpl implements RoomService {
     private void cleanExpiredRooms() {
         long now = System.currentTimeMillis();
         roomRegistry.entrySet().removeIf(entry -> (now - entry.getValue().getCreatedAt()) > ROOM_EXPIRATION_MS);
+        roomEvents.keySet().removeIf(k -> !roomRegistry.containsKey(k));
     }
 }

@@ -3,7 +3,11 @@ package com.chaturang.service;
 import com.chaturang.dto.CreateRoomRequest;
 import com.chaturang.dto.JoinRoomRequest;
 import com.chaturang.dto.MatchmakingRequest;
+import com.chaturang.dto.RoomEvent;
 import com.chaturang.dto.RoomResponse;
+import com.chaturang.dto.SendEventRequest;
+
+import java.util.List;
 
 public interface RoomService {
     RoomResponse createRoom(CreateRoomRequest request, String username, Integer rating);
@@ -11,4 +15,6 @@ public interface RoomService {
     RoomResponse getRoom(String roomCode);
     RoomResponse findMatch(MatchmakingRequest request, String username, Integer rating);
     void cancelMatch(String playerName);
+    RoomEvent sendEvent(String roomCode, SendEventRequest request);
+    List<RoomEvent> getEvents(String roomCode, Long sinceId);
 }

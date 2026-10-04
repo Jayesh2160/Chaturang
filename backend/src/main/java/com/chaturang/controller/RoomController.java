@@ -3,7 +3,9 @@ package com.chaturang.controller;
 import com.chaturang.dto.CreateRoomRequest;
 import com.chaturang.dto.JoinRoomRequest;
 import com.chaturang.dto.MatchmakingRequest;
+import com.chaturang.dto.RoomEvent;
 import com.chaturang.dto.RoomResponse;
+import com.chaturang.dto.SendEventRequest;
 import com.chaturang.security.CustomUserDetails;
 import com.chaturang.service.RoomService;
 import jakarta.validation.Valid;
@@ -12,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -51,6 +54,26 @@ public class RoomController {
     public ResponseEntity<RoomResponse> getRoom(@PathVariable String code) {
         RoomResponse response = roomService.getRoom(code);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{code}/events")
+    public ResponseEntity<RoomEvent> sendEvent(
+            @PathVariable String code,
+            @Valid @RequestBody SendEventRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails != null && userDetails.getUser() != null && request.getSenderName() == null) {
+            request.setSenderName(userDetails.getUsername());
+        }
+        RoomEvent event = roomService.sendEvent(code, request);
+        return ResponseEntity.ok(event);
+    }
+
+    @GetMapping("/{code}/events")
+    public ResponseEntity<List<RoomEvent>> getEvents(
+            @PathVariable String code,
+            @RequestParam(required = false, defaultValue = "0") Long since) {
+        List<RoomEvent> events = roomService.getEvents(code, since);
+        return ResponseEntity.ok(events);
     }
 
     @PostMapping("/matchmaking/find")
