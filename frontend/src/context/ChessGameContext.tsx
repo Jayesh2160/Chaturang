@@ -21,6 +21,9 @@ import { usePremove } from '../hooks/usePremove';
 import { useGameSounds } from '../hooks/useGameSounds';
 import { useGamePersistence } from '../hooks/useGamePersistence';
 import { engineService } from '../services/engineService';
+import { onlineGameService, generateRoomCode } from '../services/onlineGameService';
+import type { OnlineConnectionStatus, OnlinePlayerProfile, MovePayload } from '../types/online';
+import { useAuth } from './AuthContext';
 
 interface ChessGameContextType {
   // Engine
@@ -99,11 +102,24 @@ interface ChessGameContextType {
   // Computer Engine Addition
   isComputerThinking: boolean;
   evaluation: string;
+
+  // Online Multiplayer additions
+  onlineStatus: OnlineConnectionStatus;
+  onlineOpponent: OnlinePlayerProfile | null;
+  roomCode: string;
+  incomingDrawOffer: boolean;
+  lastChatMessage: { sender: string; text: string } | null;
+  sendOnlineChat: (message: string, isEmoji?: boolean) => void;
+  sendOnlineDrawOffer: () => void;
+  acceptOnlineDraw: () => void;
+  declineOnlineDraw: () => void;
+  sendOnlineRematch: () => void;
 }
 
 const ChessGameContext = createContext<ChessGameContextType | undefined>(undefined);
 
 export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const { saveGameState, loadUserPreferences, saveUserPreferences } =
     useGamePersistence();
 
@@ -112,6 +128,11 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const difficultyParam = (searchParams.get('difficulty') || 'MEDIUM').toUpperCase() as 'EASY' | 'MEDIUM' | 'HARD';
   const colorParam = (searchParams.get('color') || 'white') as 'white' | 'black' | 'random';
   const timeControlParam = (searchParams.get('timeControl') || 'rapid') as 'classic' | 'blitz' | 'rapid' | 'bullet';
+  const roomCodeParam = searchParams.get('room') || '';
+  const roleParam = (searchParams.get('role') || 'host').toUpperCase() as 'HOST' | 'GUEST';
+  const oppNameParam = searchParams.get('oppName') || '';
+  const oppRatingParam = Number(searchParams.get('oppRating') || 1200);
+  const autoMatchParam = searchParams.get('autoMatch') === 'true';
 
   const getDifficultyRating = (diff: string) => {
     switch (diff) {
@@ -191,6 +212,26 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isComputerThinking, setIsComputerThinking] = useState<boolean>(false);
   const [evaluation, setEvaluation] = useState<string>('0.00');
 
+  // Online Multiplayer States
+  const [onlineStatus, setOnlineStatus] = useState<OnlineConnectionStatus>(
+    gameModeParam === 'ONLINE' ? 'CONNECTING' : 'IDLE'
+  );
+  const [onlineOpponent, setOnlineOpponent] = useState<OnlinePlayerProfile | null>(() => {
+    if (oppNameParam) {
+      return {
+        id: 'matched-opp',
+        name: oppNameParam,
+        rating: oppRatingParam,
+        color: colorParam === 'white' ? 'b' : 'w',
+        isReady: true,
+      };
+    }
+    return null;
+  });
+  const [incomingDrawOffer, setIncomingDrawOffer] = useState<boolean>(false);
+  const [lastChatMessage, setLastChatMessage] = useState<{ sender: string; text: string } | null>(null);
+  const [roomCode] = useState<string>(roomCodeParam || '');
+
   // Sync resolved user color with game setup options
   useEffect(() => {
     if (gameSetupOptions.userColor === 'black') {
@@ -211,17 +252,25 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Player metadata
   const userPlayer: PlayerInfo = {
-    name: 'You',
-    rating: CHESS_UI.DEFAULT_USER_RATING,
+    name: user?.username || 'You',
+    rating: user?.rating || CHESS_UI.DEFAULT_USER_RATING,
     color: resolvedUserColor,
     isHuman: true,
   };
 
   const opponentPlayer: PlayerInfo = {
-    name: gameSetupOptions.opponentName,
-    rating: gameSetupOptions.opponentRating,
+    name: gameSetupOptions.gameMode === 'ONLINE'
+      ? (onlineOpponent?.name || 'Waiting for Opponent...')
+      : gameSetupOptions.gameMode === 'COMPUTER'
+      ? getDifficultyName(difficultyParam)
+      : 'Grandmaster Bot',
+    rating: gameSetupOptions.gameMode === 'ONLINE'
+      ? (onlineOpponent?.rating || 1200)
+      : gameSetupOptions.gameMode === 'COMPUTER'
+      ? getDifficultyRating(difficultyParam)
+      : CHESS_UI.DEFAULT_OPPONENT_RATING,
     color: userPlayer.color === 'w' ? 'b' : 'w',
-    isHuman: false,
+    isHuman: gameSetupOptions.gameMode !== 'COMPUTER',
   };
 
   // Engine Hook
@@ -271,6 +320,10 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       clock.pauseClock();
       sounds.playEndSound();
       setIsResultModalOpen(true);
+
+      if (gameSetupOptions.gameMode === 'ONLINE') {
+        onlineGameService.sendResign(colorToResign);
+      }
     },
     [gameSetupOptions.gameMode, resolvedUserColor, engine.turn, clock, sounds]
   );
@@ -356,7 +409,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // Check if it's user's turn
         const currentTurn = engine.turn;
         const isUserTurn =
-          gameSetupOptions.gameMode !== 'COMPUTER' || // local match allows all turns
+          gameSetupOptions.gameMode === 'SELF' || // local match allows all turns
           (resolvedUserColor === 'w' && currentTurn === 'w') ||
           (resolvedUserColor === 'b' && currentTurn === 'b');
 
@@ -367,9 +420,20 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       }
 
-      return executeMoveInternal(from, to, promotionPiece);
+      const move = executeMoveInternal(from, to, promotionPiece);
+      if (move && !isComputerCall && gameSetupOptions.gameMode === 'ONLINE') {
+        onlineGameService.sendMove({
+          from,
+          to,
+          promotion: promotionPiece,
+          fen: engine.chess.fen(),
+          whiteTime: clock.whiteTime,
+          blackTime: clock.blackTime,
+        });
+      }
+      return move;
     },
-    [engine.isGameOver, customResult, engine.turn, gameSetupOptions.gameMode, resolvedUserColor, executeMoveInternal, premoveHook]
+    [engine.isGameOver, customResult, engine.turn, engine.chess, gameSetupOptions.gameMode, resolvedUserColor, executeMoveInternal, premoveHook, clock.whiteTime, clock.blackTime]
   );
 
   // Change Clock Preset
@@ -445,9 +509,13 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     getEval();
   }, [engine.fen, gameSetupOptions.gameMode, engine.isGameOver, customResult]);
 
-  // Trigger Computer/Stockfish move when it's computer's turn
+  // Trigger Computer/Stockfish move when it's computer's turn or simulated online match
   useEffect(() => {
-    if (gameSetupOptions.gameMode !== 'COMPUTER' || engine.isGameOver || customResult || isComputerThinking) return;
+    const isAiPlaying =
+      gameSetupOptions.gameMode === 'COMPUTER' ||
+      (gameSetupOptions.gameMode === 'ONLINE' && autoMatchParam);
+
+    if (!isAiPlaying || engine.isGameOver || customResult || isComputerThinking) return;
 
     const currentTurn = engine.turn; // 'w' or 'b'
     const computerColor = resolvedUserColor === 'w' ? 'b' : 'w';
@@ -499,7 +567,172 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     engine.isGameOver,
     customResult,
     isComputerThinking,
+    autoMatchParam,
   ]);
+
+  // Online Multiplayer Action Handlers
+  const sendOnlineChat = useCallback((message: string, isEmoji = false) => {
+    onlineGameService.sendChat(message, isEmoji);
+    setLastChatMessage({ sender: 'You', text: message });
+    setTimeout(() => setLastChatMessage(null), 5000);
+  }, []);
+
+  const sendOnlineDrawOffer = useCallback(() => {
+    onlineGameService.sendDrawOffer();
+    setLastChatMessage({ sender: 'System', text: 'Draw offer sent to opponent.' });
+    setTimeout(() => setLastChatMessage(null), 4000);
+  }, []);
+
+  const acceptOnlineDraw = useCallback(() => {
+    setIncomingDrawOffer(false);
+    onlineGameService.sendDrawResponse(true);
+    setCustomResult({
+      type: GameResultType.DRAW_AGREEMENT,
+      winner: 'draw',
+      title: 'Draw Agreed',
+      subtitle: 'Mutual Agreement',
+    });
+    setIsResultModalOpen(true);
+  }, []);
+
+  const declineOnlineDraw = useCallback(() => {
+    setIncomingDrawOffer(false);
+    onlineGameService.sendDrawResponse(false);
+  }, []);
+
+  const sendOnlineRematch = useCallback(() => {
+    onlineGameService.sendRematchOffer();
+    setLastChatMessage({ sender: 'System', text: 'Rematch offer sent to opponent.' });
+    setTimeout(() => setLastChatMessage(null), 4000);
+  }, []);
+
+  const handleResetGame = useCallback(
+    (newFen?: string) => {
+      engine.resetGame(newFen);
+      clock.resetClock(activePreset.baseMinutes, activePreset.incrementSeconds);
+      setCustomResult(null);
+      setIsResultModalOpen(false);
+      premoveHook.clearPremove();
+      setEvaluation('0.00');
+      setIsComputerThinking(false);
+    },
+    [engine, clock, activePreset, premoveHook]
+  );
+
+  // Online Multiplayer Connection Lifecycle
+  useEffect(() => {
+    if (gameSetupOptions.gameMode !== 'ONLINE') return;
+
+    const currentRoom = roomCodeParam || generateRoomCode();
+    const myName = user?.username || 'You';
+    const myRating = user?.rating || 1200;
+
+    if (roleParam === 'HOST') {
+      onlineGameService.createRoom(
+        currentRoom,
+        {
+          timeControl: timeControlParam,
+          baseMinutes: activePreset.baseMinutes,
+          incrementSeconds: activePreset.incrementSeconds,
+          hostColor: colorParam,
+          isPrivate: true,
+        },
+        {
+          id: `${myName}-${Date.now()}`,
+          name: myName,
+          rating: myRating,
+        }
+      );
+    } else {
+      onlineGameService.joinRoom(currentRoom, {
+        id: `${myName}-${Date.now()}`,
+        name: myName,
+        rating: myRating,
+      });
+    }
+
+    const unsubStatus = onlineGameService.on('status', ({ status }: { status: OnlineConnectionStatus }) => {
+      setOnlineStatus(status);
+    });
+
+    const unsubOpponent = onlineGameService.on('opponentJoined', (opp: OnlinePlayerProfile) => {
+      setOnlineOpponent(opp);
+      setOnlineStatus('CONNECTED');
+      if (opp.color) {
+        setResolvedUserColor(opp.color === 'w' ? 'b' : 'w');
+      }
+      sounds.playStartSound();
+    });
+
+    const unsubConfig = onlineGameService.on('configSynced', ({ localColor }: { localColor: PlayerColor }) => {
+      if (localColor) {
+        setResolvedUserColor(localColor);
+      }
+    });
+
+    const unsubMove = onlineGameService.on('move', (payload: MovePayload) => {
+      console.log('[Online Move] Received move from remote opponent:', payload);
+      handleMakeMoveRef.current(payload.from as Square, payload.to as Square, payload.promotion as any, true);
+      if (typeof payload.whiteTime === 'number' && typeof payload.blackTime === 'number') {
+        clock.setWhiteTime(payload.whiteTime);
+        clock.setBlackTime(payload.blackTime);
+      }
+    });
+
+    const unsubResign = onlineGameService.on('resign', (color: PlayerColor) => {
+      resignGame(color);
+    });
+
+    const unsubDrawOffer = onlineGameService.on('drawOffer', () => {
+      setIncomingDrawOffer(true);
+    });
+
+    const unsubDrawAccept = onlineGameService.on('drawAccept', () => {
+      setCustomResult({
+        type: GameResultType.DRAW_AGREEMENT,
+        winner: 'draw',
+        title: 'Draw Agreed',
+        subtitle: 'Mutual Agreement',
+      });
+      setIsResultModalOpen(true);
+    });
+
+    const unsubDrawDecline = onlineGameService.on('drawDecline', () => {
+      setLastChatMessage({ sender: 'System', text: 'Opponent declined the draw offer.' });
+      setTimeout(() => setLastChatMessage(null), 4000);
+    });
+
+    const unsubChat = onlineGameService.on('chat', (data: { chat: any; senderName: string }) => {
+      setLastChatMessage({ sender: data.senderName, text: data.chat.message });
+      setTimeout(() => setLastChatMessage(null), 5000);
+    });
+
+    const unsubRematch = onlineGameService.on('rematchOffer', () => {
+      if (window.confirm('Opponent offered a rematch! Accept?')) {
+        onlineGameService.sendRematchAccept();
+        handleResetGame();
+      }
+    });
+
+    const unsubRematchAccept = onlineGameService.on('rematchAccept', () => {
+      handleResetGame();
+    });
+
+    return () => {
+      unsubStatus();
+      unsubOpponent();
+      unsubConfig();
+      unsubMove();
+      unsubResign();
+      unsubDrawOffer();
+      unsubDrawAccept();
+      unsubDrawDecline();
+      unsubChat();
+      unsubRematch();
+      unsubRematchAccept();
+      onlineGameService.cleanup();
+    };
+  }, [gameSetupOptions.gameMode, roomCodeParam, roleParam, user]);
 
   const value: ChessGameContextType = {
     // Engine
@@ -519,15 +752,7 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     makeMove: handleMakeMove,
     confirmPromotion: engine.confirmPromotion,
     cancelPromotion: engine.cancelPromotion,
-    resetGame: (newFen?: string) => {
-      engine.resetGame(newFen);
-      clock.resetClock(activePreset.baseMinutes, activePreset.incrementSeconds);
-      setCustomResult(null);
-      setIsResultModalOpen(false);
-      premoveHook.clearPremove();
-      setEvaluation('0.00');
-      setIsComputerThinking(false);
-    },
+    resetGame: handleResetGame,
     loadFen: engine.loadFen,
     canUndo: engine.canUndo,
     canRedo: engine.canRedo,
@@ -584,6 +809,18 @@ export const ChessGameProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Computer states
     isComputerThinking,
     evaluation,
+
+    // Online Multiplayer additions
+    onlineStatus,
+    onlineOpponent,
+    roomCode,
+    incomingDrawOffer,
+    lastChatMessage,
+    sendOnlineChat,
+    sendOnlineDrawOffer,
+    acceptOnlineDraw,
+    declineOnlineDraw,
+    sendOnlineRematch,
   };
 
   return <ChessGameContext.Provider value={value}>{children}</ChessGameContext.Provider>;

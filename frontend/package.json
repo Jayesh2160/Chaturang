@@ -16,6 +16,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.24.0",
+    "peerjs": "^1.5.5",
     "react": "^19.2.7",
     "react-chessboard": "^5.10.0",
     "react-dom": "^19.2.7",

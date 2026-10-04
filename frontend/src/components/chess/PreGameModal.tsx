@@ -5,6 +5,7 @@ import { BOARD_THEMES } from '../../utils/boardThemes';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Settings, Check } from 'lucide-react';
+import { OnlineMatchModal } from './OnlineMatchModal';
 
 interface PreGameModalProps {
   currentOptions: GameSetupOptions;
@@ -24,8 +25,11 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
   const [userColor, setUserColor] = useState<'white' | 'black' | 'random'>(currentOptions.userColor);
   const [themeId, setThemeId] = useState<string>(currentOptions.themeId);
   const [autoFlip] = useState<boolean>(currentOptions.autoFlip);
-  const [gameMode, setGameMode] = useState<'SELF' | 'COMPUTER'>(currentOptions.gameMode === 'COMPUTER' ? 'COMPUTER' : 'SELF');
+  const [gameMode, setGameMode] = useState<'SELF' | 'COMPUTER' | 'ONLINE'>(
+    currentOptions.gameMode === 'COMPUTER' ? 'COMPUTER' : currentOptions.gameMode === 'ONLINE' ? 'ONLINE' : 'SELF'
+  );
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>(currentOptions.difficulty || 'MEDIUM');
+  const [isOnlineModalOpen, setIsOnlineModalOpen] = useState<boolean>(false);
 
   const getDifficultyRating = (diff: string) => {
     switch (diff) {
@@ -82,16 +86,22 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
             <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
               Game Mode
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'SELF', label: '👥 Local Play' },
-                { id: 'COMPUTER', label: '🤖 vs Stockfish' },
+                { id: 'SELF', label: '👥 Local' },
+                { id: 'COMPUTER', label: '🤖 vs Engine' },
+                { id: 'ONLINE', label: '🌐 Online' },
               ].map((m) => (
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => setGameMode(m.id as any)}
-                  className={`py-2 px-3 rounded-xl border text-xs font-semibold text-center transition-colors ${
+                  onClick={() => {
+                    setGameMode(m.id as any);
+                    if (m.id === 'ONLINE') {
+                      setIsOnlineModalOpen(true);
+                    }
+                  }}
+                  className={`py-2 px-2 rounded-xl border text-xs font-semibold text-center transition-colors ${
                     gameMode === m.id
                       ? 'bg-purple-600 text-white border-purple-400 shadow-md'
                       : 'bg-zinc-900 border-white/5 text-zinc-400 hover:bg-zinc-800'
@@ -102,6 +112,22 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Online Match Prompt */}
+          {gameMode === 'ONLINE' && (
+            <div className="p-3 bg-purple-950/30 border border-purple-500/20 rounded-xl space-y-2">
+              <p className="text-xs text-purple-200">
+                Play against a friend with a 6-character Room Code or match with an online player.
+              </p>
+              <Button
+                type="button"
+                onClick={() => setIsOnlineModalOpen(true)}
+                className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg"
+              >
+                Configure Matchmaking / Room Code
+              </Button>
+            </div>
+          )}
 
           {/* Difficulty Selection (Only if gameMode is COMPUTER) */}
           {gameMode === 'COMPUTER' && (
@@ -253,6 +279,16 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
           </div>
         </form>
       </Card>
+
+      {isOnlineModalOpen && (
+        <OnlineMatchModal
+          isOpen={isOnlineModalOpen}
+          onClose={() => {
+            setIsOnlineModalOpen(false);
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 };

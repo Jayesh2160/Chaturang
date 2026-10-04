@@ -12,6 +12,7 @@ import { Card } from '../components/ui/Card';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { calculateGamificationStats, getDailyGoalsStatus } from '../utils/gamification';
+import { OnlineMatchModal } from '../components/chess/OnlineMatchModal';
 
 // 3 Daily tactical puzzles definition
 const DAILY_PUZZLES = [
@@ -54,6 +55,7 @@ export const Dashboard: React.FC = () => {
 
   // Play vs Computer Modal states
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [isOnlineModalOpen, setIsOnlineModalOpen] = useState(false);
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM');
   const [playerColor, setPlayerColor] = useState<'white' | 'black'>('white');
   const [gameMode, setGameMode] = useState<'classic' | 'blitz' | 'rapid' | 'bullet'>('rapid');
@@ -622,13 +624,13 @@ export const Dashboard: React.FC = () => {
             <h2 className="text-xs uppercase font-bold tracking-widest text-zinc-500">
               Quick Actions
             </h2>
-            <div className="grid grid-cols-2 gap-4 h-44">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-44">
               <div 
                 onClick={() => navigate('/play?gameMode=SELF')}
                 className="p-5 border border-white/5 bg-zinc-950/20 hover:border-white/10 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between text-left group"
               >
                 <div className="space-y-1">
-                  <span className="text-[8px] text-zinc-550 font-bold uppercase tracking-widest block">Sandbox Board</span>
+                  <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest block">Sandbox Board</span>
                   <h4 className="text-sm font-semibold text-zinc-200">Local Match</h4>
                   <p className="text-[10px] text-zinc-500 font-light mt-0.5 leading-snug">Practice opening coordinates and analyze structures locally.</p>
                 </div>
@@ -642,12 +644,31 @@ export const Dashboard: React.FC = () => {
                 className="p-5 border border-white/5 bg-zinc-950/20 hover:border-white/10 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between text-left group"
               >
                 <div className="space-y-1">
-                  <span className="text-[8px] text-zinc-550 font-bold uppercase tracking-widest block">AI Challenge</span>
+                  <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest block">AI Challenge</span>
                   <h4 className="text-sm font-semibold text-zinc-200">Play vs Computer</h4>
                   <p className="text-[10px] text-zinc-500 font-light mt-0.5 leading-snug">Challenge Stockfish with customized ELO difficulties.</p>
                 </div>
                 <span className="text-[10px] text-brand-accent font-semibold tracking-wider flex items-center gap-1 group-hover:text-brand-accent/80 transition-colors">
                   Play Engine <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
+                </span>
+              </div>
+
+              <div 
+                onClick={() => setIsOnlineModalOpen(true)}
+                className="p-5 border border-purple-500/20 bg-purple-950/10 hover:border-purple-500/40 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between text-left group shadow-lg shadow-purple-950/20"
+              >
+                <div className="space-y-1">
+                  <span className="text-[8px] text-purple-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Live Multiplayer
+                  </span>
+                  <h4 className="text-sm font-semibold text-white">Online Arena</h4>
+                  <p className="text-[10px] text-zinc-400 font-light mt-0.5 leading-snug">
+                    Quick matchmaking or invite friends with a private room code.
+                  </p>
+                </div>
+                <span className="text-[10px] text-purple-400 font-semibold tracking-wider flex items-center gap-1 group-hover:text-purple-300 transition-colors">
+                  Play Online <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
                 </span>
               </div>
             </div>
@@ -820,6 +841,14 @@ export const Dashboard: React.FC = () => {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* Online Matchmaking & Room Code Modal */}
+      {isOnlineModalOpen && (
+        <OnlineMatchModal
+          isOpen={isOnlineModalOpen}
+          onClose={() => setIsOnlineModalOpen(false)}
+        />
       )}
     </Layout>
   );

@@ -18,6 +18,9 @@ import { PromotionModal } from '../components/chess/PromotionModal';
 import { ClockPresetModal } from '../components/chess/ClockPresetModal';
 import { PreGameModal } from '../components/chess/PreGameModal';
 import { GameResultModal } from '../components/chess/GameResultModal';
+import { OnlineGameBanner } from '../components/chess/OnlineGameBanner';
+import { OnlineMatchModal } from '../components/chess/OnlineMatchModal';
+import { Globe } from 'lucide-react';
 
 const PlayGameContent: React.FC = () => {
   const navigate = useNavigate();
@@ -86,10 +89,23 @@ const PlayGameContent: React.FC = () => {
     // Computer states
     isComputerThinking,
     evaluation,
+
+    // Online Multiplayer additions
+    onlineStatus,
+    onlineOpponent,
+    roomCode,
+    incomingDrawOffer,
+    lastChatMessage,
+    sendOnlineChat,
+    sendOnlineDrawOffer,
+    acceptOnlineDraw,
+    declineOnlineDraw,
+    sendOnlineRematch,
   } = useChessGameContext();
 
   // Modals state
   const [isClockModalOpen, setIsClockModalOpen] = useState<boolean>(false);
+  const [isOnlineModalOpen, setIsOnlineModalOpen] = useState<boolean>(false);
 
   // Save game modal state
   const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false);
@@ -100,7 +116,7 @@ const PlayGameContent: React.FC = () => {
 
   // Square Click Handler (Click-to-Move)
   const handleSquareClick = (square: Square) => {
-    if (activeResult || isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
+    if (activeResult || isComputerThinking || (gameSetupOptions.gameMode !== 'SELF' && turn !== userPlayer.color)) {
       return;
     }
     // If piece selected, attempt move
@@ -130,7 +146,7 @@ const PlayGameContent: React.FC = () => {
 
   // Piece Drop Handler (Drag-and-Drop)
   const handlePieceDrop = (sourceSquare: Square, targetSquare: Square): boolean => {
-    if (activeResult || isComputerThinking || (gameSetupOptions.gameMode === 'COMPUTER' && turn !== userPlayer.color)) {
+    if (activeResult || isComputerThinking || (gameSetupOptions.gameMode !== 'SELF' && turn !== userPlayer.color)) {
       return false;
     }
     const move = makeMove(sourceSquare, targetSquare);
@@ -234,13 +250,24 @@ const PlayGameContent: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={() => setIsPreGameModalOpen(true)}
-          className="self-start md:self-auto text-xs py-2 px-3 text-purple-300 border-purple-500/30"
-        >
-          ⚙️ Configure Match
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsOnlineModalOpen(true)}
+            className="self-start md:self-auto text-xs py-2 px-3 text-emerald-400 border-emerald-500/30 bg-emerald-950/20 hover:bg-emerald-900/30 flex items-center gap-1.5"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            Play Online
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setIsPreGameModalOpen(true)}
+            className="self-start md:self-auto text-xs py-2 px-3 text-purple-300 border-purple-500/30"
+          >
+            ⚙️ Configure Match
+          </Button>
+        </div>
       </div>
 
       {/* Main 3-Column Desktop Grid Layout */}
@@ -275,6 +302,24 @@ const PlayGameContent: React.FC = () => {
         {/* Column 2: Chessboard & Player Cards (Center Column - 6 cols) */}
         <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col items-center gap-4">
           
+          {/* Online Match Live HUD Banner */}
+          {gameSetupOptions.gameMode === 'ONLINE' && (
+            <OnlineGameBanner
+              status={onlineStatus}
+              roomCode={roomCode}
+              opponent={onlineOpponent}
+              onSendChat={sendOnlineChat}
+              onOfferDraw={sendOnlineDrawOffer}
+              onResign={handleResign}
+              onRematch={sendOnlineRematch}
+              isGameOver={!!activeResult}
+              incomingDrawOffer={incomingDrawOffer}
+              onAcceptDraw={acceptOnlineDraw}
+              onDeclineDraw={declineOnlineDraw}
+              lastChatMessage={lastChatMessage}
+            />
+          )}
+
           {/* Top Player (Opponent) Panel */}
           <PlayerPanel
             player={topPlayer}
@@ -490,6 +535,14 @@ const PlayGameContent: React.FC = () => {
             </form>
           </Card>
         </div>
+      )}
+
+      {/* Online Matchmaking & Room Code Modal */}
+      {isOnlineModalOpen && (
+        <OnlineMatchModal
+          isOpen={isOnlineModalOpen}
+          onClose={() => setIsOnlineModalOpen(false)}
+        />
       )}
     </div>
   );
