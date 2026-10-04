@@ -13,6 +13,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { calculateGamificationStats, getDailyGoalsStatus } from '../utils/gamification';
 import { OnlineMatchModal } from '../components/chess/OnlineMatchModal';
+import { PlayOnlineChoiceModal } from '../components/chess/PlayOnlineChoiceModal';
 
 // 3 Daily tactical puzzles definition
 const DAILY_PUZZLES = [
@@ -56,6 +57,8 @@ export const Dashboard: React.FC = () => {
   // Play vs Computer Modal states
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [isOnlineModalOpen, setIsOnlineModalOpen] = useState(false);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
+  const [onlineModalTab, setOnlineModalTab] = useState<'MATCHMAKING' | 'ROOM_CODE'>('MATCHMAKING');
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM');
   const [playerColor, setPlayerColor] = useState<'white' | 'black'>('white');
   const [gameMode, setGameMode] = useState<'classic' | 'blitz' | 'rapid' | 'bullet'>('rapid');
@@ -689,7 +692,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               <div 
-                onClick={() => setIsOnlineModalOpen(true)}
+                onClick={() => setIsChoiceModalOpen(true)}
                 className="p-5 border border-purple-500/20 bg-purple-950/10 hover:border-purple-500/40 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col justify-between text-left group shadow-lg shadow-purple-950/20"
               >
                 <div className="space-y-1">
@@ -878,10 +881,22 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Play Online Choice Popup */}
+      <PlayOnlineChoiceModal
+        isOpen={isChoiceModalOpen}
+        onClose={() => setIsChoiceModalOpen(false)}
+        onSelectChoice={(choice) => {
+          setIsChoiceModalOpen(false);
+          setOnlineModalTab(choice === 'FRIEND_CODE' ? 'ROOM_CODE' : 'MATCHMAKING');
+          setIsOnlineModalOpen(true);
+        }}
+      />
+
       {/* Online Matchmaking & Room Code Modal */}
       {isOnlineModalOpen && (
         <OnlineMatchModal
           isOpen={isOnlineModalOpen}
+          initialTab={onlineModalTab}
           onClose={() => setIsOnlineModalOpen(false)}
         />
       )}

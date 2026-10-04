@@ -14,6 +14,7 @@ import { PreGameModal } from '../components/chess/PreGameModal';
 import { GameResultModal } from '../components/chess/GameResultModal';
 import { OnlineGameBanner } from '../components/chess/OnlineGameBanner';
 import { OnlineMatchModal } from '../components/chess/OnlineMatchModal';
+import { PlayOnlineChoiceModal } from '../components/chess/PlayOnlineChoiceModal';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Globe, Users, Bot } from 'lucide-react';
@@ -197,6 +198,8 @@ const DevChessContent: React.FC = () => {
 
   const [isClockModalOpen, setIsClockModalOpen] = useState(false);
   const [isOnlineModalOpen, setIsOnlineModalOpen] = useState(false);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
+  const [onlineModalTab, setOnlineModalTab] = useState<'MATCHMAKING' | 'ROOM_CODE'>('MATCHMAKING');
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [opponentNameInput, setOpponentNameInput] = useState(opponentPlayer.name);
   const [customResultInput, setCustomResultInput] = useState('IN_PROGRESS');
@@ -326,7 +329,7 @@ const DevChessContent: React.FC = () => {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setIsOnlineModalOpen(true)}
+              onClick={() => setIsChoiceModalOpen(true)}
               className="self-start text-xs py-2 px-3.5 text-purple-200 border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 flex items-center gap-2 shadow-lg shadow-purple-950/30 transition-all"
             >
               <Globe className="w-3.5 h-3.5 text-purple-400" />
@@ -417,7 +420,7 @@ const DevChessContent: React.FC = () => {
               <button
                 onClick={() => {
                   updateGameSetup({ ...gameSetupOptions, gameMode: 'ONLINE' });
-                  setIsOnlineModalOpen(true);
+                  setIsChoiceModalOpen(true);
                 }}
                 className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   gameSetupOptions.gameMode === 'ONLINE'
@@ -561,10 +564,22 @@ const DevChessContent: React.FC = () => {
           />
         )}
 
+        {/* Play Online Choice Popup */}
+        <PlayOnlineChoiceModal
+          isOpen={isChoiceModalOpen}
+          onClose={() => setIsChoiceModalOpen(false)}
+          onSelectChoice={(choice) => {
+            setIsChoiceModalOpen(false);
+            setOnlineModalTab(choice === 'FRIEND_CODE' ? 'ROOM_CODE' : 'MATCHMAKING');
+            setIsOnlineModalOpen(true);
+          }}
+        />
+
         {/* Online Matchmaking & Room Code Modal */}
         {isOnlineModalOpen && (
           <OnlineMatchModal
             isOpen={isOnlineModalOpen}
+            initialTab={onlineModalTab}
             onClose={() => setIsOnlineModalOpen(false)}
           />
         )}

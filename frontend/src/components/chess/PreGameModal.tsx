@@ -6,6 +6,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Settings, Check } from 'lucide-react';
 import { OnlineMatchModal } from './OnlineMatchModal';
+import { PlayOnlineChoiceModal } from './PlayOnlineChoiceModal';
 
 interface PreGameModalProps {
   currentOptions: GameSetupOptions;
@@ -30,6 +31,8 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
   );
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>(currentOptions.difficulty || 'MEDIUM');
   const [isOnlineModalOpen, setIsOnlineModalOpen] = useState<boolean>(false);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState<boolean>(false);
+  const [onlineModalTab, setOnlineModalTab] = useState<'MATCHMAKING' | 'ROOM_CODE'>('MATCHMAKING');
 
   const getDifficultyRating = (diff: string) => {
     switch (diff) {
@@ -98,7 +101,7 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
                   onClick={() => {
                     setGameMode(m.id as any);
                     if (m.id === 'ONLINE') {
-                      setIsOnlineModalOpen(true);
+                      setIsChoiceModalOpen(true);
                     }
                   }}
                   className={`py-2 px-2 rounded-xl border text-xs font-semibold text-center transition-colors ${
@@ -121,7 +124,7 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
               </p>
               <Button
                 type="button"
-                onClick={() => setIsOnlineModalOpen(true)}
+                onClick={() => setIsChoiceModalOpen(true)}
                 className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg"
               >
                 Configure Matchmaking / Room Code
@@ -280,9 +283,21 @@ export const PreGameModal: React.FC<PreGameModalProps> = ({
         </form>
       </Card>
 
+      {/* Play Online Choice Popup */}
+      <PlayOnlineChoiceModal
+        isOpen={isChoiceModalOpen}
+        onClose={() => setIsChoiceModalOpen(false)}
+        onSelectChoice={(choice) => {
+          setIsChoiceModalOpen(false);
+          setOnlineModalTab(choice === 'FRIEND_CODE' ? 'ROOM_CODE' : 'MATCHMAKING');
+          setIsOnlineModalOpen(true);
+        }}
+      />
+
       {isOnlineModalOpen && (
         <OnlineMatchModal
           isOpen={isOnlineModalOpen}
+          initialTab={onlineModalTab}
           onClose={() => {
             setIsOnlineModalOpen(false);
             onClose();
