@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Move } from 'chess.js';
-import { Copy, Download, History, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Copy, Download, History, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface MoveHistoryProps {
@@ -26,6 +26,7 @@ export const MoveHistory: React.FC<MoveHistoryProps> = React.memo(
     pgn,
   }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [copied, setCopied] = useState(false);
 
     // Auto scroll to latest move when history changes
     useEffect(() => {
@@ -48,7 +49,8 @@ export const MoveHistory: React.FC<MoveHistoryProps> = React.memo(
 
     const copyPgn = () => {
       navigator.clipboard.writeText(pgn);
-      alert('PGN copied to clipboard!');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     };
 
     const downloadPgn = () => {
@@ -171,10 +173,12 @@ export const MoveHistory: React.FC<MoveHistoryProps> = React.memo(
             variant="outline"
             onClick={copyPgn}
             disabled={history.length === 0}
-            className="flex-1 py-1.5 h-8 text-[11px] text-zinc-300"
+            className={`flex-1 py-1.5 h-8 text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+              copied ? 'text-emerald-400 border-emerald-500/40 bg-emerald-950/20' : 'text-zinc-300'
+            }`}
           >
-            <Copy className="w-3 h-3" />
-            Copy PGN
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            {copied ? 'Copied!' : 'Copy PGN'}
           </Button>
 
           <Button

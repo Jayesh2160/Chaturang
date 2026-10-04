@@ -36,19 +36,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const activeNavList = user ? navItems : guestNavItems;
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950">
+    <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100">
       {/* Floating Navigation Header */}
-      <header className="fixed top-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl z-50 bg-black/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-xl shadow-black/45">
-        <div className="px-5 h-14 flex items-center justify-between">
-          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
-            <div className="h-7 w-7 rounded-md bg-gradient-to-tr from-violet-600 to-sky-400 flex items-center justify-center shadow-lg shadow-violet-500/20">
-              <span className="font-display font-extrabold text-white text-xs">Ch</span>
+      <header className="fixed top-5 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 bg-zinc-950/85 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl shadow-black/80 ring-1 ring-white/5 transition-all">
+        <div className="px-5 h-16 flex items-center justify-between">
+          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-3 hover:opacity-90 transition-opacity group">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-violet-600 via-purple-500 to-sky-400 flex items-center justify-center shadow-lg shadow-violet-500/25 ring-1 ring-white/20 group-hover:scale-105 transition-transform">
+              <span className="font-display font-extrabold text-white text-xs tracking-tight">Ch</span>
             </div>
-            <span className="font-display font-bold text-sm tracking-wider text-white">Chaturang</span>
+            <div className="flex flex-col text-left">
+              <span className="font-display font-extrabold text-sm tracking-wider text-white">Chaturang</span>
+              <span className="text-[9px] font-semibold text-purple-400 tracking-widest uppercase -mt-0.5">Grandmaster Arena</span>
+            </div>
           </Link>
 
           {/* Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1.5 bg-zinc-900/60 p-1 rounded-full border border-white/5">
             {activeNavList.map((item) => {
               const Icon = item.icon;
               const isOnlineLink = item.path.includes('gameMode=ONLINE');
@@ -60,15 +63,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-300 ${
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 ${
                     isActive
-                      ? 'bg-white/10 text-white font-semibold'
+                      ? 'bg-gradient-to-r from-white/15 to-white/10 text-white font-bold shadow-sm border border-white/10'
                       : isOnlineLink
-                      ? 'text-purple-300 hover:text-white hover:bg-purple-500/10'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                      ? 'text-purple-300 hover:text-white hover:bg-purple-500/15'
+                      : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isOnlineLink ? 'text-purple-400' : ''}`} strokeWidth={1.5} />
+                  <Icon className={`w-3.5 h-3.5 ${isOnlineLink ? 'text-purple-400' : ''}`} strokeWidth={1.75} />
                   {item.label}
                   {item.isLive && (
                     <span className="relative flex h-2 w-2 ml-0.5">
@@ -83,8 +86,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {user ? (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-zinc-900 border border-white/5 px-3 py-1 rounded-full text-[10px] font-bold text-zinc-300 shadow-md">
-                <Award className="w-3.5 h-3.5 shrink-0 text-brand-accent" strokeWidth={1.5} />
+              <div className="flex items-center gap-1.5 bg-gradient-to-r from-zinc-900 to-zinc-900/80 border border-white/10 px-3.5 py-1.5 rounded-full text-[11px] font-bold text-zinc-200 shadow-md">
+                <Award className="w-3.5 h-3.5 shrink-0 text-brand-accent" strokeWidth={2} />
                 <span>{user.rating} ELO</span>
               </div>
               
@@ -92,7 +95,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="text-zinc-400 hover:text-red-400 flex items-center gap-1.5 px-2 py-1 h-8 rounded-full"
+                className="text-zinc-400 hover:text-red-400 flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl hover:bg-red-950/20 hover:border-red-500/20 border border-transparent transition-all"
               >
                 <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Sign Out</span>
@@ -102,22 +105,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
-                className="text-xs font-semibold text-zinc-400 hover:text-white px-3 py-1.5 transition-colors"
+                className="text-xs font-semibold text-zinc-400 hover:text-white px-3.5 py-2 transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 to="/register"
-                className="text-xs font-bold text-zinc-950 bg-white hover:bg-zinc-200 px-3.5 py-1.5 rounded-full transition-all shadow-sm"
+                className="text-xs font-bold text-zinc-950 bg-white hover:bg-zinc-200 px-4 py-2 rounded-xl transition-all shadow-md shadow-white/10"
               >
-                Register
+                Get Started
               </Link>
             </div>
           )}
         </div>
 
         {/* Mobile Navigation Links (Below Header) */}
-        <div className="md:hidden border-t border-white/5 bg-zinc-950/20 px-3 py-2 flex justify-around rounded-b-2xl">
+        <div className="md:hidden border-t border-white/5 bg-zinc-950/40 px-3 py-2 flex justify-around rounded-b-2xl">
           {activeNavList.map((item) => {
             const Icon = item.icon;
             const isOnlineLink = item.path.includes('gameMode=ONLINE');
@@ -129,7 +132,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all duration-300 ${
+                className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all duration-300 ${
                   isActive ? 'text-brand-accent font-bold' : isOnlineLink ? 'text-purple-400' : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
@@ -147,7 +150,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       {/* Page Body with top padding matching floating navbar height */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 pt-28 pb-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
         {children}
       </main>
     </div>

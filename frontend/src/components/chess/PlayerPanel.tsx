@@ -28,19 +28,21 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = React.memo(
     const isWarning = timeInSeconds <= CHESS_UI.TIMER_WARNING_SEC && timeInSeconds > CHESS_UI.TIMER_CRITICAL_SEC;
     const isCritical = timeInSeconds <= CHESS_UI.TIMER_CRITICAL_SEC;
 
-    let timerColorClass = 'text-white bg-zinc-900 border-zinc-800';
+    let timerColorClass = 'text-white bg-zinc-900/90 border-white/10';
     if (isCritical) {
-      timerColorClass = 'text-red-400 bg-red-950/80 border-red-500/50 animate-pulse shadow-lg shadow-red-500/20';
+      timerColorClass = 'text-red-400 bg-red-950/80 border-red-500/50 animate-pulse shadow-lg shadow-red-500/30';
     } else if (isWarning) {
-      timerColorClass = 'text-amber-400 bg-amber-950/70 border-amber-500/40';
+      timerColorClass = 'text-amber-300 bg-amber-950/70 border-amber-500/40 shadow-md shadow-amber-500/20';
+    } else if (isActiveTurn) {
+      timerColorClass = 'text-emerald-300 bg-emerald-950/40 border-emerald-500/40 shadow-lg shadow-emerald-950/50';
     }
 
     return (
       <div
         className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all duration-300 ${
           isActiveTurn
-            ? 'bg-zinc-900/90 border-emerald-500/50 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/30'
-            : 'bg-zinc-950/50 border-white/5 opacity-80'
+            ? 'bg-gradient-to-r from-zinc-900/95 via-purple-950/25 to-zinc-900/95 border-purple-500/40 shadow-xl shadow-purple-950/40 ring-1 ring-purple-500/30'
+            : 'bg-zinc-950/70 border-white/5 opacity-85 hover:opacity-100'
         }`}
       >
         {/* Left Side: Avatar, Name, Rating & Captured Pieces */}

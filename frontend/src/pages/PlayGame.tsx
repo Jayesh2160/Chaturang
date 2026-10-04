@@ -260,25 +260,31 @@ const PlayGameContent: React.FC = () => {
       </div>
 
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/5 pb-5">
         <div>
-          <h1 className="text-3xl font-extrabold font-display text-white tracking-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              Tournament Standard · Stockfish 16 NNUE
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-display text-white tracking-tight">
             Interactive Chess Arena
           </h1>
-          <p className="text-zinc-400 text-xs font-light mt-0.5">
-            Tournament-grade interface with premoves, move assistance, clocks, and live analysis.
+          <p className="text-zinc-400 text-xs font-light mt-1">
+            Tournament-grade board with premoves, move assistance, clocks, and live peer-to-peer multiplayer.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
             onClick={() => setIsOnlineModalOpen(true)}
-            className="self-start md:self-auto text-xs py-2 px-3.5 text-purple-200 border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 flex items-center gap-2 shadow-lg shadow-purple-950/30 transition-all"
+            className="self-start md:self-auto text-xs py-2.5 px-4 text-purple-200 border-purple-500/40 bg-gradient-to-r from-purple-950/40 to-indigo-950/40 hover:from-purple-900/50 hover:to-indigo-900/50 flex items-center gap-2 shadow-lg shadow-purple-950/40 rounded-xl transition-all"
           >
-            <Globe className="w-3.5 h-3.5 text-purple-400" />
-            <span className="font-semibold">Play Online</span>
-            <span className="relative flex h-2 w-2">
+            <Globe className="w-4 h-4 text-purple-400" />
+            <span className="font-bold">Play Online</span>
+            <span className="relative flex h-2 w-2 ml-0.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
@@ -287,7 +293,7 @@ const PlayGameContent: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => setIsPreGameModalOpen(true)}
-            className="self-start md:self-auto text-xs py-2 px-3 text-zinc-300 border-white/10 hover:border-white/20"
+            className="self-start md:self-auto text-xs py-2.5 px-3.5 text-zinc-300 border-white/10 hover:border-white/20 bg-zinc-900/60 rounded-xl"
           >
             ⚙️ Configure Match
           </Button>
@@ -327,12 +333,12 @@ const PlayGameContent: React.FC = () => {
         <div className="lg:col-span-6 order-1 lg:order-2 flex flex-col items-center gap-3">
           
           {/* Tournament Mode Selector Bar */}
-          <div className="w-full grid grid-cols-3 gap-1.5 bg-zinc-900/80 border border-white/5 p-1 rounded-xl shadow-lg">
+          <div className="w-full grid grid-cols-3 gap-1.5 bg-zinc-900/90 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl shadow-xl ring-1 ring-white/5">
             <button
               onClick={() => updateGameSetup({ ...gameSetupOptions, gameMode: 'SELF' })}
-              className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                 gameSetupOptions.gameMode === 'SELF'
-                  ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                  ? 'bg-zinc-800 text-white shadow-md border border-white/15 font-bold'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -343,9 +349,9 @@ const PlayGameContent: React.FC = () => {
 
             <button
               onClick={() => updateGameSetup({ ...gameSetupOptions, gameMode: 'COMPUTER' })}
-              className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                 gameSetupOptions.gameMode === 'COMPUTER'
-                  ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                  ? 'bg-zinc-800 text-white shadow-md border border-white/15 font-bold'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -359,9 +365,9 @@ const PlayGameContent: React.FC = () => {
                 updateGameSetup({ ...gameSetupOptions, gameMode: 'ONLINE' });
                 setIsOnlineModalOpen(true);
               }}
-              className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                 gameSetupOptions.gameMode === 'ONLINE'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/30'
+                  ? 'bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 font-bold border border-purple-400/30'
                   : 'text-purple-300 hover:text-white hover:bg-purple-950/40'
               }`}
             >

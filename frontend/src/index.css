@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -9,12 +9,15 @@
   --color-brand-primary: #ffffff;
   --color-brand-primary-hover: #e4e4e7;
   --color-brand-secondary: #18181b;                  
-  --color-brand-accent: #6d4aff;                     
-  --color-brand-accent-hover: #5835eb;
+  --color-brand-accent: #8b5cf6;                     
+  --color-brand-accent-hover: #7c3aed;
   
-  --color-dark-bg: #030303;                          
-  --color-dark-card: rgba(10, 10, 12, 0.65);         
-  --color-dark-border: rgba(255, 255, 255, 0.04);       
+  --color-dark-bg: #050508;                          
+  --color-dark-card: rgba(13, 13, 18, 0.75);         
+  --color-dark-border: rgba(255, 255, 255, 0.08);
+
+  --color-zinc-350: #b4b4bb;
+  --color-zinc-550: #6b7280;
 }
 
 /* Core resets and base styles */
@@ -28,12 +31,14 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #030303;
+  background-color: #050508;
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(109, 74, 255, 0.06), transparent 50%),
-    linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.007) 1px, transparent 1px);
-  background-size: 100% 100%, 48px 48px, 48px 48px;
+    radial-gradient(circle at 50% -10%, rgba(139, 92, 246, 0.15), transparent 45%),
+    radial-gradient(circle at 10% 30%, rgba(56, 189, 248, 0.05), transparent 35%),
+    radial-gradient(circle at 90% 70%, rgba(168, 85, 247, 0.06), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 48px 48px, 48px 48px;
   background-attachment: fixed;
   overflow-x: hidden;
   position: relative;
@@ -47,29 +52,45 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.015;
+  opacity: 0.02;
   pointer-events: none;
   z-index: 9999;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
-/* Glassmorphism utility card - Keep it extremely subtle */
+/* Glassmorphism utility card */
 .glass-panel {
-  background: rgba(10, 10, 12, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(13, 13, 18, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
   transform: translateY(-2px);
 }
 
-/* Premium gradient text - very subtle, mostly white to light gray */
+/* Luxury Card with gradient border */
+.luxury-card {
+  position: relative;
+  background: rgba(13, 13, 18, 0.85);
+  backdrop-filter: blur(24px);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
+  transition: all 0.35s ease;
+}
+
+.luxury-card:hover {
+  border-color: rgba(168, 85, 247, 0.3);
+  box-shadow: 0 15px 50px -10px rgba(139, 92, 246, 0.2);
+}
+
+/* Premium gradient text */
 .text-gradient {
   background: linear-gradient(135deg, #ffffff 40%, #d4d4d8 100%);
   -webkit-background-clip: text;

@@ -498,6 +498,23 @@ export const Landing: React.FC = () => {
                     <circle cx="270" cy="210" r="3" fill="#6d4aff"/>
                   </svg>
                 )
+              },
+              {
+                tag: 'GLOBAL MULTIPLAYER',
+                title: 'Real-Time Peer-to-Peer Play',
+                desc: 'Challenge players globally with zero latency. Generate private 6-character room codes or share direct links to play with friends across any device without lobby friction.',
+                art: (
+                  <svg viewBox="0 0 400 300" fill="none" className="w-full h-full text-zinc-600 max-h-[220px]">
+                    <circle cx="140" cy="150" r="50" stroke="#8b5cf6" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.6"/>
+                    <circle cx="260" cy="150" r="50" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.6"/>
+                    <line x1="140" y1="150" x2="260" y2="150" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="6 6"/>
+                    <circle cx="140" cy="150" r="16" fill="#8b5cf6" opacity="0.3"/>
+                    <circle cx="140" cy="150" r="8" fill="#8b5cf6"/>
+                    <circle cx="260" cy="150" r="16" fill="#38bdf8" opacity="0.3"/>
+                    <circle cx="260" cy="150" r="8" fill="#38bdf8"/>
+                    <circle cx="200" cy="150" r="5" fill="#ffffff"/>
+                  </svg>
+                )
               }
             ].map((feature, idx) => (
               <motion.div

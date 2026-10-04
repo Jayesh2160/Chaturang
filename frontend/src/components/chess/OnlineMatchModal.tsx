@@ -119,44 +119,50 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in text-left">
-      <Card className="w-full max-w-lg bg-zinc-950 border-purple-500/30 p-6 space-y-6 shadow-2xl rounded-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in text-left">
+      <Card className="w-full max-w-lg bg-zinc-950/95 border border-purple-500/30 p-7 space-y-6 shadow-[0_25px_60px_rgba(0,0,0,0.85)] rounded-3xl relative max-h-[90vh] overflow-y-auto ring-1 ring-white/10">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors"
+          className="absolute top-5 right-5 text-zinc-500 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-all"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
         <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-              <Globe className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-purple-600/30 to-indigo-600/30 border border-purple-500/30 text-purple-300 shadow-md">
+              <Globe className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-display font-bold text-lg text-white">
-                Live Online Multiplayer
-              </h3>
-              <p className="text-zinc-400 text-xs mt-0.5">
-                Compete against online players via matchmaking or invite friends with a room code.
+              <div className="flex items-center gap-2">
+                <h3 className="font-display font-extrabold text-xl text-white">
+                  Live Online Arena
+                </h3>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              </div>
+              <p className="text-zinc-400 text-xs mt-0.5 font-light">
+                Match with global players or play friends with a private room code.
               </p>
             </div>
           </div>
         </div>
 
         {/* Mode Selector Tabs */}
-        <div className="grid grid-cols-2 p-1 bg-zinc-900/90 border border-white/5 rounded-xl">
+        <div className="grid grid-cols-2 p-1.5 bg-zinc-900/90 border border-white/10 rounded-2xl shadow-inner">
           <button
             type="button"
             onClick={() => {
               setActiveTab('MATCHMAKING');
               setIsSearching(false);
             }}
-            className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+            className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'MATCHMAKING'
-                ? 'bg-purple-600 text-white shadow-md'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-md shadow-purple-600/30'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -169,9 +175,9 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
               setActiveTab('ROOM_CODE');
               setIsSearching(false);
             }}
-            className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+            className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'ROOM_CODE'
-                ? 'bg-purple-600 text-white shadow-md'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-md shadow-purple-600/30'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -199,13 +205,13 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
                         key={t.id}
                         type="button"
                         onClick={() => setTimeControl(t.id as any)}
-                        className={`p-3 rounded-xl border text-center transition-all ${
+                        className={`p-3.5 rounded-2xl border text-center transition-all ${
                           timeControl === t.id
-                            ? 'bg-purple-600/20 border-purple-500 text-white shadow-lg shadow-purple-950/50'
-                            : 'bg-zinc-900/60 border-white/5 text-zinc-400 hover:border-white/10 hover:text-zinc-200'
+                            ? 'bg-purple-600/25 border-purple-500 text-white shadow-lg shadow-purple-950/60 ring-1 ring-purple-500/40 -translate-y-0.5'
+                            : 'bg-zinc-900/60 border-white/5 text-zinc-400 hover:border-white/15 hover:text-zinc-200 hover:bg-zinc-900'
                         }`}
                       >
-                        <span className="text-xl block mb-1">{t.icon}</span>
+                        <span className="text-2xl block mb-1">{t.icon}</span>
                         <span className="text-xs font-bold block text-white">{t.label}</span>
                         <span className="text-[10px] text-zinc-400">{t.sub}</span>
                       </button>
@@ -214,19 +220,19 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
                 </div>
 
                 {/* Rating Info Card */}
-                <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5 flex items-center justify-between text-xs">
+                <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-white/5 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-purple-400" />
                     <span className="text-zinc-300 font-medium">Your Rating:</span>
                   </div>
-                  <span className="font-mono font-bold text-purple-300">
+                  <span className="font-mono font-bold text-purple-300 bg-purple-950/40 border border-purple-500/20 px-2.5 py-0.5 rounded-lg">
                     {user?.rating || 1200} ELO
                   </span>
                 </div>
 
                 <Button
                   onClick={() => setIsSearching(true)}
-                  className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-purple-900/30"
+                  className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-xl shadow-purple-900/40 transition-all hover:scale-[1.01]"
                 >
                   <Sparkles className="w-4 h-4" />
                   Find Opponent Now
@@ -236,12 +242,12 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
               /* Searching Match Screen */
               <div className="py-8 flex flex-col items-center justify-center space-y-4 text-center">
                 <div className="relative flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin" />
-                  <div className="absolute w-12 h-12 rounded-full bg-purple-500/20 animate-ping" />
-                  <Radio className="w-6 h-6 text-purple-400 absolute" />
+                  <div className="w-24 h-24 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin" />
+                  <div className="absolute w-16 h-16 rounded-full bg-purple-500/10 animate-ping" />
+                  <Radio className="w-7 h-7 text-purple-400 absolute" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-white">Searching for an Opponent...</h4>
+                  <h4 className="text-lg font-bold font-display text-white">Searching for an Opponent...</h4>
                   <p className="text-xs text-zinc-400 mt-1">
                     Matching with players near your rating ({user?.rating || 1200} ELO)
                   </p>
@@ -249,12 +255,12 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
                 <div className="flex items-center gap-4 text-xs font-mono text-purple-300 bg-purple-950/40 border border-purple-500/20 px-4 py-1.5 rounded-full">
                   <span>Searching: {searchTime}s</span>
                   <span>•</span>
-                  <span>Est: ~6s</span>
+                  <span>Est: ~5s</span>
                 </div>
                 <Button
                   variant="outline"
                   onClick={() => setIsSearching(false)}
-                  className="text-xs text-zinc-400 hover:text-white border-zinc-700"
+                  className="text-xs text-zinc-400 hover:text-white border-zinc-700 rounded-xl"
                 >
                   Cancel Matchmaking
                 </Button>
@@ -297,31 +303,38 @@ export const OnlineMatchModal: React.FC<OnlineMatchModalProps> = ({
             {roomSubTab === 'CREATE' ? (
               <div className="space-y-4">
                 {/* Room Code Display Box */}
-                <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider block">
-                      Your Room Code
-                    </span>
-                    <span className="font-mono text-2xl font-extrabold text-white tracking-widest">
-                      {generatedRoomCode}
-                    </span>
+                <div className="p-4 rounded-2xl bg-gradient-to-b from-purple-950/20 to-zinc-900/60 border border-purple-500/30 flex flex-col items-center gap-3 text-center">
+                  <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Share this 6-Character Room Code
+                  </span>
+                  {/* Segmented character tiles */}
+                  <div className="flex items-center gap-2 justify-center py-1">
+                    {generatedRoomCode.split('').map((char, i) => (
+                      <div
+                        key={i}
+                        className="w-10 h-12 rounded-xl bg-purple-950/60 border border-purple-500/40 text-white font-mono font-extrabold text-xl flex items-center justify-center shadow-lg shadow-purple-950/50"
+                      >
+                        {char}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2">
+
+                  <div className="flex items-center gap-2 mt-1">
                     <button
                       type="button"
                       onClick={handleCopyCode}
-                      className="p-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
+                      className="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
                     >
-                      {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                      {copiedCode ? 'Copied' : 'Copy Code'}
+                      {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedCode ? 'Code Copied' : 'Copy Code'}
                     </button>
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="p-2 rounded-lg bg-purple-600/30 border border-purple-500/40 text-purple-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
+                      className="px-3 py-1.5 rounded-xl bg-purple-600/30 border border-purple-500/40 text-purple-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
                     >
-                      {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                      {copiedLink ? 'Link Copied' : 'Share Link'}
+                      {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedLink ? 'Link Copied' : 'Copy Direct Link'}
                     </button>
                   </div>
                 </div>
